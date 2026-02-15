@@ -1,0 +1,657 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FAROSINT Professional{% endblock %}
+
+{% block extra_css %}
+<style>
+/* PROPUESTA 2: MINIMAL PROFESSIONAL - Estilo limpio y corporativo */
+
+/* Modo Claro (por defecto) */
+body.light-mode {
+    background: #f5f7fa;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #2d3748;
+}
+
+/* Modo Oscuro */
+body.dark-mode {
+    background: #1a202c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #e2e8f0;
+}
+
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px 0;
+    margin: -20px -15px 30px -15px;
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+/* Light Mode - Cards */
+body.light-mode .stat-card-modern {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Dark Mode - Cards */
+body.dark-mode .stat-card-modern {
+    background: #2d3748;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--card-color), var(--card-color-light));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+body.light-mode .stat-card-modern:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+}
+
+body.dark-mode .stat-card-modern:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+}
+
+.stat-card-modern:hover::before {
+    opacity: 1;
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin: 10px 0;
+}
+
+body.light-mode .stat-label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #8b95a5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+body.dark-mode .stat-label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-change {
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+.stat-change.positive {
+    color: #10b981;
+}
+
+.stat-change.negative {
+    color: #ef4444;
+}
+
+body.light-mode .content-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .content-card {
+    background: #2d3748;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-header-clean {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+body.light-mode .card-header-clean {
+    border-bottom: 2px solid #f0f3f7;
+}
+
+body.dark-mode .card-header-clean {
+    border-bottom: 2px solid #4a5568;
+}
+
+body.light-mode .card-title-clean {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+}
+
+body.dark-mode .card-title-clean {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin: 0;
+}
+
+.table-modern {
+    margin: 0;
+}
+
+body.light-mode .table-modern thead tr {
+    border-bottom: 2px solid #e2e8f0;
+}
+
+body.dark-mode .table-modern thead tr {
+    border-bottom: 2px solid #4a5568;
+}
+
+body.light-mode .table-modern th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    border: none;
+}
+
+body.dark-mode .table-modern th {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 16px;
+    border: none;
+}
+
+body.light-mode .table-modern td {
+    padding: 16px;
+    vertical-align: middle;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+    color: #2d3748;
+    font-size: 1rem;
+}
+
+body.dark-mode .table-modern td {
+    padding: 16px;
+    vertical-align: middle;
+    border: none;
+    border-bottom: 1px solid #4a5568;
+    color: #e2e8f0;
+    font-size: 1rem;
+}
+
+.table-modern tbody tr {
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+body.light-mode .table-modern tbody tr:hover {
+    background: #f7fafc;
+}
+
+body.dark-mode .table-modern tbody tr:hover {
+    background: #374151;
+}
+
+.table-modern tbody tr:hover {
+    background: #f8fafc;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-running {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.severity-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-block;
+    text-transform: uppercase;
+}
+
+.severity-critical {
+    background: #7f1d1d;
+    color: white;
+}
+
+.severity-high {
+    background: #dc2626;
+    color: white;
+}
+
+.severity-medium {
+    background: #f59e0b;
+    color: white;
+}
+
+.severity-low {
+    background: #3b82f6;
+    color: white;
+}
+
+.action-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.metric-item {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.metric-item-value {
+    font-size: 2rem;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.metric-item-label {
+    font-size: 0.95rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Estilos para elementos de tabla adaptables */
+body.light-mode .table-target {
+    color: #1e293b;
+}
+
+body.dark-mode .table-target {
+    color: #f8f9fa;
+}
+
+body.light-mode .table-badge-type {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+body.dark-mode .table-badge-type {
+    background: #4a5568;
+    color: #e2e8f0;
+}
+
+body.light-mode .table-date {
+    color: #64748b;
+}
+
+body.dark-mode .table-date {
+    color: #a0aec0;
+}
+
+body.light-mode .table-icon-muted {
+    color: #cbd5e1;
+}
+
+body.dark-mode .table-icon-muted {
+    color: #718096;
+}
+
+/* Forzar fondo correcto para tabla en modo oscuro */
+body.dark-mode .content-card .table-modern {
+    background: transparent !important;
+    background-color: transparent !important;
+    --bs-table-bg: transparent !important;
+}
+
+body.dark-mode .content-card .table-modern tbody,
+body.dark-mode .content-card .table-modern tbody tr,
+body.dark-mode .content-card .table-modern tbody td {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+body.dark-mode .content-card .table {
+    background: transparent !important;
+    background-color: transparent !important;
+    --bs-table-bg: transparent !important;
+}
+
+body.dark-mode .content-card .table-responsive {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="dashboard-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-2" style="font-weight: 700; font-size: 2.5rem;">Dashboard FAROSINT</h1>
+                <p class="mb-0" style="opacity: 0.9; font-size: 1.1rem;">Plataforma Avanzada de Inteligencia de Seguridad</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/scan/new" class="action-btn">
+                    <i data-lucide="plus" width="18" height="18"></i>
+                    Nuevo Escaneo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-6 col-lg">
+        <div class="stat-card-modern" style="--card-color: #3b82f6; --card-color-light: #60a5fa;" onclick="scrollToScans()">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);">
+                <i data-lucide="activity" width="28" height="28" style="color: white;"></i>
+            </div>
+            <div class="stat-value" style="color: #3b82f6;">{{ stats.total_scans }}</div>
+            <div class="stat-label">Total Escaneos</div>
+            <div class="stat-change positive">
+                <i data-lucide="trending-up" width="12" height="12"></i>
+                +12% vs mes pasado
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card-modern" style="--card-color: #10b981; --card-color-light: #34d399;" onclick="filterByStatus('completed')">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);">
+                <i data-lucide="check-circle" width="28" height="28" style="color: white;"></i>
+            </div>
+            <div class="stat-value" style="color: #10b981;">{{ stats.scans_by_status.get('completed', 0) }}</div>
+            <div class="stat-label">Completados</div>
+            <div class="stat-change positive">
+                <i data-lucide="check" width="12" height="12"></i>
+                {{ ((stats.scans_by_status.get('completed', 0) / stats.total_scans * 100) if stats.total_scans > 0 else 0)|round }}% tasa de éxito
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card-modern" style="--card-color: #f59e0b; --card-color-light: #fbbf24;" onclick="filterByStatus('running')">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);">
+                <i data-lucide="loader" width="28" height="28" style="color: white;"></i>
+            </div>
+            <div class="stat-value" style="color: #f59e0b;">{{ stats.scans_by_status.get('running', 0) }}</div>
+            <div class="stat-label">En Progreso</div>
+            <div class="stat-change">
+                <i data-lucide="clock" width="12" height="12"></i>
+                Activo ahora
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card-modern" style="--card-color: #ef4444; --card-color-light: #f87171;" onclick="filterByStatus('failed')">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);">
+                <i data-lucide="x-circle" width="28" height="28" style="color: white;"></i>
+            </div>
+            <div class="stat-value" style="color: #ef4444;">{{ stats.scans_by_status.get('failed', 0) }}</div>
+            <div class="stat-label">Fallidos</div>
+            <div class="stat-change">
+                <i data-lucide="alert-triangle" width="12" height="12"></i>
+                Requiere atención
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg">
+        <div class="stat-card-modern" style="--card-color: #8b5cf6; --card-color-light: #a78bfa;" onclick="goToLastScanVulns()">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);">
+                <i data-lucide="shield-alert" width="28" height="28" style="color: white;"></i>
+            </div>
+            <div class="stat-value" style="color: #8b5cf6;">{{ stats.total_vulnerabilities }}</div>
+            <div class="stat-label">Vulnerabilidades</div>
+            <div class="stat-change {% if severity_stats.critical > 0 %}negative{% else %}positive{% endif %}">
+                <i data-lucide="{% if severity_stats.critical > 0 %}alert-circle{% else %}shield-check{% endif %}" width="12" height="12"></i>
+                {{ severity_stats.critical }} críticas
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vulnerability Metrics -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="card-header-clean">
+                <h3 class="card-title-clean">Distribución de Vulnerabilidades</h3>
+                <select class="form-select form-select-sm" style="width: auto; border-radius: 8px;">
+                    <option>Últimos 7 días</option>
+                    <option>Últimos 30 días</option>
+                    <option>Todo el tiempo</option>
+                </select>
+            </div>
+            <div class="metric-grid">
+                <div class="metric-item" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);">
+                    <span class="metric-item-value" style="color: #991b1b;">{{ severity_stats.critical }}</span>
+                    <span class="metric-item-label" style="color: #991b1b;">Críticas</span>
+                </div>
+                <div class="metric-item" style="background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);">
+                    <span class="metric-item-value" style="color: #9a3412;">{{ severity_stats.high }}</span>
+                    <span class="metric-item-label" style="color: #9a3412;">Altas</span>
+                </div>
+                <div class="metric-item" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+                    <span class="metric-item-value" style="color: #92400e;">{{ severity_stats.medium }}</span>
+                    <span class="metric-item-label" style="color: #92400e;">Medias</span>
+                </div>
+                <div class="metric-item" style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);">
+                    <span class="metric-item-value" style="color: #1e40af;">{{ severity_stats.low }}</span>
+                    <span class="metric-item-label" style="color: #1e40af;">Bajas</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="content-card h-100">
+            <div class="card-header-clean">
+                <h3 class="card-title-clean">Puntuación de Seguridad</h3>
+            </div>
+            <div class="text-center py-4">
+                <div style="font-size: 4rem; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {% set score = 100 - (severity_stats.critical * 20 + severity_stats.high * 10 + severity_stats.medium * 5) %}
+                    {{ [score, 0]|max }}
+                </div>
+                <p class="text-muted mb-0">Calificación General de Seguridad</p>
+                <div class="mt-3">
+                    <div class="progress" style="height: 8px; border-radius: 10px;">
+                        <div class="progress-bar" style="width: {{ [score, 0]|max }}%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Scans Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="content-card">
+            <div class="card-header-clean">
+                <h3 class="card-title-clean">Escaneos de Seguridad Recientes</h3>
+                <div>
+                    <input type="text" class="form-control form-control-sm" placeholder="Buscar escaneos..." style="width: 250px; border-radius: 8px;">
+                </div>
+            </div>
+
+            {% if recent_scans %}
+            <div class="table-responsive">
+                <table class="table table-modern">
+                    <thead>
+                        <tr>
+                            <th>Objetivo</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Vulnerabilidades</th>
+                            <th>Severidad</th>
+                            <th>Fecha</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in recent_scans[:8] %}
+                        <tr onclick="window.location.href='/scan/{{ scan.scan_id }}'">
+                            <td>
+                                <strong class="table-target">{{ scan.target }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge table-badge-type" style="border-radius: 6px;">
+                                    {{ scan.scan_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if scan.status == 'completed' %}
+                                <span class="status-badge status-completed">
+                                    <i data-lucide="check" width="12" height="12"></i>
+                                    Completado
+                                </span>
+                                {% elif scan.status == 'running' %}
+                                <span class="status-badge status-running">
+                                    <i data-lucide="loader" width="12" height="12"></i>
+                                    En ejecución
+                                </span>
+                                {% else %}
+                                <span class="status-badge status-failed">
+                                    <i data-lucide="x" width="12" height="12"></i>
+                                    Fallido
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong style="color: #8b5cf6;">{{ scan.total_vulnerabilities or 0 }}</strong>
+                            </td>
+                            <td>
+                                {% if scan.critical_count and scan.critical_count > 0 %}
+                                <span class="severity-badge severity-critical">{{ scan.critical_count }} Críticas</span>
+                                {% elif scan.high_count and scan.high_count > 0 %}
+                                <span class="severity-badge severity-high">{{ scan.high_count }} Altas</span>
+                                {% else %}
+                                <span class="severity-badge severity-low">Seguro</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-date" style="font-size: 0.9rem;">
+                                {{ scan.start_time|datetime('%Y-%m-%d %H:%M') }}
+                            </td>
+                            <td>
+                                <i data-lucide="chevron-right" width="20" height="20" class="table-icon-muted"></i>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i data-lucide="inbox" width="64" height="64" style="color: #cbd5e1;"></i>
+                <p class="mt-3 text-muted">No se encontraron escaneos</p>
+                <a href="/scan/new" class="action-btn mt-2">
+                    Iniciar Primer Escaneo
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function scrollToScans() {
+    document.querySelector('.content-card').scrollIntoView({ behavior: 'smooth' });
+}
+
+function filterByStatus(status) {
+    alert('Filter by: ' + status);
+}
+
+function goToLastScanVulns() {
+    {% if recent_scans %}
+    window.location.href = '/scan/{{ recent_scans[0].scan_id }}#vulnerabilities';
+    {% endif %}
+}
+
+lucide.createIcons();
+</script>
+{% endblock %}

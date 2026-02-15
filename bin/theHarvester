@@ -1,0 +1,3 @@
+#!/bin/bash
+source ~/FAROSINT/farosint-env/bin/activate
+python ~/FAROSINT/tools/theHarvester/theHarvester.py "$@"

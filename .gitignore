@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+farosint-env/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs and output
+logs/
+output/
+*.log
+
+# Cache
+engine/cache/
+
+# Backups
+*.backup_*
+
+# Temp files
+-.json
+fix_database.sql
+
+# Dev scripts (diagnostics, fixes, tests)
+scripts/diagnostico*.sh
+scripts/diagnostico*.log
+scripts/fix-*.sh
+scripts/install-*.sh
+scripts/setup-*.sh
+scripts/crear-*.sh
+scripts/test-*.sh
+scripts/test-*.log
+scripts/test_*.py
+scripts/app_mejorado.py
+
+# Docs that don't belong in repo
+engine/utils/CAPITULO_*.docx
+engine/utils/CAPITULO_*.md
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Tools binaries
+tools/

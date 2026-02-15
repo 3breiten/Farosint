@@ -1,0 +1,80 @@
+# FAROSINT Engine Configuration
+# ========================================
+
+engine:
+  name: "FAROSINT Orchestrator"
+  version: "1.0.0"
+  max_workers: 6              # Máximo de herramientas en paralelo
+  default_timeout: 600        # Timeout por defecto (10 minutos)
+  enable_cache: true
+  cache_ttl: 86400           # 24 horas
+  log_level: "INFO"          # DEBUG, INFO, WARNING, ERROR
+
+# Límites de recursos
+limits:
+  max_subdomains: 500        # Máximo de subdominios a escanear
+  max_urls: 200              # Máximo de URLs para httpx
+  max_ips: 100               # Máximo de IPs para Nmap completo
+  max_ports_per_ip: 1000     # Puertos por IP (Nmap)
+  max_lan_hosts: 254         # Máximo de hosts para escaneo LAN (evitar /8, /16)
+
+# Timeouts específicos por herramienta (segundos)
+timeouts:
+  amass: 600               # 10 minutos (reducido para evitar timeouts en dominios grandes)
+  subfinder: 300           # 5 minutos
+  theharvester: 900        # 15 minutos
+  httpx: 600               # 10 minutos
+  nmap_quick: 300          # 5 minutos (top 100 ports)
+  nmap_full: 600           # 10 minutos (reducido de 30 min - evita escaneos eternos)
+  masscan: 600             # 10 minutos
+  rustscan: 300            # 5 minutos (escaneo rápido de puertos)
+  whatweb: 600             # 10 minutos (identificación de tecnologías)
+  nuclei: 600              # 10 minutos (reducido de 30 min - evita escaneos eternos)
+  vuln_matcher: 300        # 5 minutos (correlación con CVEs)
+  ip_reputation: 180       # 3 minutos (checks de reputación)
+  shodan: 60               # 1 minuto
+  censys: 60               # 1 minuto
+  host_discovery: 300      # 5 minutos (ping sweep LAN)
+
+# Prioridades (1=máxima, 5=mínima)
+priorities:
+  subfinder: 1             # Rápido, corre primero
+  shodan: 1
+  censys: 1
+  amass: 2                 # Lento pero importante
+  theharvester: 2
+  httpx: 3                 # Depende de subdominios
+  rustscan: 3              # Escaneo rápido de puertos (paralelo con httpx)
+  nmap: 4                  # Depende de httpx o rustscan
+  whatweb: 4               # Identificación de tecnologías web
+  ip_reputation: 4         # Análisis de reputación de IPs
+  vuln_matcher: 5          # Correlación con CVEs (depende de todos)
+  nuclei: 5                # Último, usa resultados de todos
+
+# Scope (filtros inteligentes)
+scope:
+  exclude_patterns:
+    - "^[0-9]+\\..*"       # Subdominios que empiezan con números
+    - "^-.*"                # Subdominios que empiezan con guión
+    - ".*\\.cdn\\..*"       # CDN externos
+    - ".*cloudfront.*"
+    - ".*akamai.*"
+  
+  priority_keywords:       # Subdominios de mayor interés
+    - "admin"
+    - "panel"
+    - "dev"
+    - "test"
+    - "staging"
+    - "api"
+    - "vpn"
+    - "internal"
+    - "backup"
+    - "db"
+    - "database"
+
+# Salida
+output:
+  format: "json"           # json, csv, html
+  compress: true           # Comprimir resultados antiguos
+  retention_days: 30       # Días para mantener resultados

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FAROSINT - Dashboard{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/farosint.css') }}">
+
+    <!-- Estilos globales para modo claro/oscuro -->
+    <style>
+        /* Estilos del navbar adaptables */
+        body.light-mode .navbar-dark {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #dee2e6 !important;
+        }
+
+        body.light-mode .navbar-dark .navbar-brand,
+        body.light-mode .navbar-dark .nav-link {
+            color: #212529 !important;
+        }
+
+        body.light-mode .navbar-dark .nav-link:hover,
+        body.light-mode .navbar-dark .nav-link.active {
+            color: #0d6efd !important;
+        }
+
+        body.light-mode .navbar-toggler-icon {
+            filter: invert(1);
+        }
+
+        /* Footer adaptable */
+        body.light-mode .footer.bg-dark {
+            background-color: #ffffff !important;
+            color: #212529 !important;
+            border-top: 1px solid #dee2e6 !important;
+        }
+
+        body.light-mode .footer .text-muted {
+            color: #6c757d !important;
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-info">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="FAROSINT" height="40" class="me-2">
+                <span class="fw-bold">FAROSINT</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="/">
+                            <i data-lucide="home" class="icon-inline"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'scan_new' %}active{% endif %}" href="/scan/new">
+                            <i data-lucide="radar" class="icon-inline"></i> Nuevo Escaneo
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'results' %}active{% endif %}" href="/results">
+                            <i data-lucide="database" class="icon-inline"></i> Resultados
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'config_page' %}active{% endif %}" href="/config">
+                            <i data-lucide="settings" class="icon-inline"></i> Configuración
+                        </a>
+                    </li>
+
+                    <!-- Selector de Tema (solo visible en dashboard) -->
+                    <li class="nav-item dropdown" id="themeSelectorNav">
+                        <a class="nav-link dropdown-toggle" href="#" id="themeSelector" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i data-lucide="palette" class="icon-inline"></i> <span id="currentThemeLabel">Tema</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="themeSelector">
+                            <li><a class="dropdown-item theme-option" href="#" data-theme="original">Original</a></li>
+                            <li><a class="dropdown-item theme-option" href="#" data-theme="minimal">Profesional</a></li>
+                            <li><a class="dropdown-item theme-option" href="#" data-theme="glass">Cristal</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Toggle Claro/Oscuro -->
+                    <li class="nav-item d-flex align-items-center ms-2">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="darkModeToggle" style="cursor: pointer;">
+                            <label class="form-check-label text-light ms-1" for="darkModeToggle" style="cursor: pointer; font-size: 0.9rem;">
+                                <i data-lucide="moon" width="18" height="18" id="modeIcon"></i>
+                            </label>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Contenido principal -->
+    <main class="container-fluid py-4">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark text-light border-top border-info">
+        <div class="container text-center">
+            <span class="text-muted">FAROSINT v1.0 - Framework de Análisis de Superficie de Ataque OSINT</span>
+        </div>
+    </footer>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <script>
+        // Inicializar Lucide Icons
+        lucide.createIcons();
+
+        // ========== SISTEMA DE TEMAS Y MODO CLARO/OSCURO ==========
+
+        // Obtener preferencias guardadas
+        const savedTheme = localStorage.getItem('farosint_theme') || 'original';
+        const savedMode = localStorage.getItem('farosint_mode') || 'dark';
+
+        // Mapeo de nombres de temas
+        const themeNames = {
+            'original': 'Original',
+            'minimal': 'Profesional',
+            'glass': 'Cristal'
+        };
+
+        // Función para aplicar el tema
+        function applyTheme(theme, mode) {
+            // Guardar en localStorage
+            localStorage.setItem('farosint_theme', theme);
+            localStorage.setItem('farosint_mode', mode);
+
+            // Actualizar label del selector
+            document.getElementById('currentThemeLabel').textContent = themeNames[theme];
+
+            // Actualizar el icono del modo
+            const modeIcon = document.getElementById('modeIcon');
+            if (mode === 'dark') {
+                modeIcon.setAttribute('data-lucide', 'moon');
+            } else {
+                modeIcon.setAttribute('data-lucide', 'sun');
+            }
+            lucide.createIcons();
+
+            // Actualizar checkbox
+            document.getElementById('darkModeToggle').checked = (mode === 'dark');
+
+            // Redirigir a la ruta correspondiente
+            const currentPath = window.location.pathname;
+
+            // Si estamos en el dashboard, redirigir según el tema
+            if (currentPath === '/' || currentPath.startsWith('/preview/')) {
+                if (theme === 'original') {
+                    window.location.href = '/?mode=' + mode;
+                } else {
+                    window.location.href = '/preview/' + theme + '?mode=' + mode;
+                }
+            } else {
+                // Para otras páginas, recargar con el parámetro de modo
+                const url = new URL(window.location.href);
+                url.searchParams.set('mode', mode);
+                window.location.href = url.toString();
+            }
+        }
+
+        // Aplicar tema al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+
+            // Mostrar selector de tema solo en el dashboard
+            if (currentPath === '/' || currentPath.startsWith('/preview/')) {
+                document.getElementById('themeSelectorNav').style.display = 'block';
+            } else {
+                document.getElementById('themeSelectorNav').style.display = 'none';
+            }
+
+            // Detectar el tema actual basado en la URL, no solo en localStorage
+            let actualTheme = savedTheme;
+            if (currentPath === '/') {
+                actualTheme = 'original';
+            } else if (currentPath.startsWith('/preview/minimal')) {
+                actualTheme = 'minimal';
+            } else if (currentPath.startsWith('/preview/glass')) {
+                actualTheme = 'glass';
+            }
+
+            // Actualizar label del tema actual con el tema real
+            document.getElementById('currentThemeLabel').textContent = themeNames[actualTheme];
+
+            // Actualizar icono y checkbox del modo
+            const modeIcon = document.getElementById('modeIcon');
+            if (savedMode === 'dark') {
+                modeIcon.setAttribute('data-lucide', 'moon');
+                document.getElementById('darkModeToggle').checked = true;
+            } else {
+                modeIcon.setAttribute('data-lucide', 'sun');
+                document.getElementById('darkModeToggle').checked = false;
+            }
+            lucide.createIcons();
+
+            // Agregar clase de modo al body
+            document.body.classList.add(savedMode + '-mode');
+
+            // Event listeners para opciones de tema
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const selectedTheme = this.getAttribute('data-theme');
+                    applyTheme(selectedTheme, savedMode);
+                });
+            });
+
+            // Event listener para toggle de modo
+            document.getElementById('darkModeToggle').addEventListener('change', function() {
+                const newMode = this.checked ? 'dark' : 'light';
+                applyTheme(savedTheme, newMode);
+            });
+        });
+    </script>
+</body>
+</html>

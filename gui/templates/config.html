@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - FAROSINT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-0">
+            <i data-lucide="settings"></i> Configuración
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i data-lucide="key"></i> API Keys</h5>
+            </div>
+            <div class="card-body">
+                <form id="apiKeysForm">
+                    <!-- Shodan -->
+                    <div class="mb-3">
+                        <label for="shodanKey" class="form-label">
+                            Shodan API Key
+                            <a href="https://account.shodan.io" target="_blank" class="text-decoration-none">
+                                <i data-lucide="external-link" class="icon-inline"></i>
+                            </a>
+                        </label>
+                        <input type="text" 
+                               class="form-control font-monospace" 
+                               id="shodanKey" 
+                               placeholder="Ingresa tu Shodan API Key">
+                        <div class="form-text">
+                            Obtén tu API key gratuita en account.shodan.io
+                        </div>
+                    </div>
+                    
+                    <!-- Censys -->
+                    <div class="mb-3">
+                        <label for="censysId" class="form-label">
+                            Censys API ID
+                            <a href="https://search.censys.io/account/api" target="_blank" class="text-decoration-none">
+                                <i data-lucide="external-link" class="icon-inline"></i>
+                            </a>
+                        </label>
+                        <input type="text" 
+                               class="form-control font-monospace" 
+                               id="censysId" 
+                               placeholder="Censys API ID">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="censysSecret" class="form-label">Censys API Secret</label>
+                        <input type="password" 
+                               class="form-control font-monospace" 
+                               id="censysSecret" 
+                               placeholder="Censys API Secret">
+                        <div class="form-text">
+                            Obtén tus credenciales en search.censys.io/account/api
+                        </div>
+                    </div>
+                    
+                    <!-- VirusTotal -->
+                    <div class="mb-3">
+                        <label for="vtKey" class="form-label">
+                            VirusTotal API Key
+                            <a href="https://www.virustotal.com/gui/my-apikey" target="_blank" class="text-decoration-none">
+                                <i data-lucide="external-link" class="icon-inline"></i>
+                            </a>
+                        </label>
+                        <input type="text" 
+                               class="form-control font-monospace" 
+                               id="vtKey" 
+                               placeholder="VirusTotal API Key">
+                    </div>
+                    
+                    <!-- GitHub -->
+                    <div class="mb-3">
+                        <label for="githubToken" class="form-label">
+                            GitHub Personal Access Token
+                            <a href="https://github.com/settings/tokens" target="_blank" class="text-decoration-none">
+                                <i data-lucide="external-link" class="icon-inline"></i>
+                            </a>
+                        </label>
+                        <input type="password" 
+                               class="form-control font-monospace" 
+                               id="githubToken" 
+                               placeholder="GitHub Token">
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i data-lucide="alert-triangle"></i>
+                        <strong>Nota:</strong> Las API keys se guardan en texto plano en 
+                        <code>~/FAROSINT/config/api_keys.yaml</code>. 
+                        Asegúrate de proteger este archivo adecuadamente.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary" id="btnTest">
+                            <i data-lucide="check-circle"></i> Probar Conexiones
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Configuración del Motor -->
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i data-lucide="cpu"></i> Configuración del Motor</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i>
+                    Para modificar la configuración del motor (timeouts, límites, workers), 
+                    edita el archivo:
+                    <code>~/FAROSINT/engine/config.yaml</code>
+                </div>
+                
+                <a href="#" class="btn btn-outline-primary" onclick="alert('Funcionalidad próximamente')">
+                    <i data-lucide="edit"></i> Editar config.yaml
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Manejar envío del formulario
+document.getElementById('apiKeysForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const apiKeys = {
+        shodan: document.getElementById('shodanKey').value,
+        censys_id: document.getElementById('censysId').value,
+        censys_secret: document.getElementById('censysSecret').value,
+        virustotal: document.getElementById('vtKey').value,
+        github: document.getElementById('githubToken').value
+    };
+    
+    // TODO: Implementar guardado de API keys
+    alert('Funcionalidad de guardado próximamente.\n\nPor ahora, configura manualmente en:\n~/FAROSINT/config/api_keys.yaml');
+});
+
+// Probar conexiones
+document.getElementById('btnTest').addEventListener('click', function() {
+    alert('Funcionalidad de test de API keys próximamente.');
+});
+</script>
+{% endblock %}

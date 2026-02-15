@@ -1,0 +1,567 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FAROSINT{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Tema Original - Modo Oscuro (por defecto) */
+body.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode h5 {
+    color: #f8f9fa;
+}
+
+body.dark-mode .card {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .table {
+    color: #f8f9fa;
+    --bs-table-bg: transparent;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+    color: #f8f9fa;
+}
+
+body.dark-mode .table thead {
+    background-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .table th {
+    background-color: #495057;
+    color: #f8f9fa;
+    border-color: #6c757d;
+}
+
+body.dark-mode .table td {
+    border-color: #6c757d;
+    color: #f8f9fa;
+}
+
+body.dark-mode .badge {
+    background-color: #495057 !important;
+}
+
+/* Tema Original - Modo Claro */
+body.light-mode {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode h5 {
+    color: #212529;
+}
+
+body.light-mode .card {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    color: #212529;
+}
+
+body.light-mode .card-header.bg-dark {
+    background-color: #0d6efd !important;
+    color: #ffffff !important;
+}
+
+body.light-mode .table {
+    color: #212529;
+}
+
+body.light-mode .table-light {
+    background-color: #e9ecef;
+}
+
+body.light-mode .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075);
+}
+
+body.light-mode .text-muted {
+    color: #6c757d !important;
+}
+
+body.light-mode code {
+    background-color: #e9ecef !important;
+    color: #212529 !important;
+}
+
+/* Footer adaptable */
+body.light-mode .footer {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+body.light-mode .footer .text-muted {
+    color: #6c757d !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i data-lucide="activity"></i> Dashboard FAROSINT
+        </h1>
+    </div>
+</div>
+
+<!-- Estadísticas (Clickeables) - Una sola fila -->
+<div class="row mb-4 g-3">
+    <div class="col-6 col-md">
+        <div class="card bg-primary text-white clickable-card h-100" style="cursor: pointer;" onclick="scrollToScans()">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-1 small">Total Escaneos</h6>
+                        <h2 class="mb-0">{{ stats.total_scans }}</h2>
+                        <small class="d-none d-lg-block"><i data-lucide="mouse-pointer" style="width:10px;height:10px;"></i> Click</small>
+                    </div>
+                    <i data-lucide="scan" width="40" height="40"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md">
+        <div class="card bg-success text-white clickable-card h-100" style="cursor: pointer;" onclick="filterByStatus('completed')">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-1 small">Completados</h6>
+                        <h2 class="mb-0">{{ stats.scans_by_status.get('completed', 0) }}</h2>
+                        <small class="d-none d-lg-block"><i data-lucide="mouse-pointer" style="width:10px;height:10px;"></i> Click</small>
+                    </div>
+                    <i data-lucide="check-circle" width="40" height="40"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md">
+        <div class="card bg-warning text-dark clickable-card h-100" style="cursor: pointer;" onclick="filterByStatus('running')">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-1 small">En Progreso</h6>
+                        <h2 class="mb-0">{{ stats.scans_by_status.get('running', 0) }}</h2>
+                        <small class="d-none d-lg-block"><i data-lucide="mouse-pointer" style="width:10px;height:10px;"></i> Click</small>
+                    </div>
+                    <i data-lucide="loader" width="40" height="40"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md">
+        <div class="card bg-danger text-white clickable-card h-100" style="cursor: pointer;" onclick="filterByStatus('failed')">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-1 small">Fallidos</h6>
+                        <h2 class="mb-0">{{ stats.scans_by_status.get('failed', 0) }}</h2>
+                        <small class="d-none d-lg-block"><i data-lucide="mouse-pointer" style="width:10px;height:10px;"></i> Click</small>
+                    </div>
+                    <i data-lucide="x-circle" width="40" height="40"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md">
+        <div class="card bg-info text-white clickable-card h-100" style="cursor: pointer;" onclick="goToLastScanVulns()">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="card-title mb-1 small">Vulnerabilidades</h6>
+                        <h2 class="mb-0">{{ stats.total_vulnerabilities }}</h2>
+                        <small class="d-none d-lg-block"><i data-lucide="mouse-pointer" style="width:10px;height:10px;"></i> Click</small>
+                    </div>
+                    <i data-lucide="shield-alert" width="40" height="40"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i data-lucide="pie-chart"></i> Vulnerabilidades por Severidad</h5>
+                    <select id="scanSelector" class="form-select form-select-sm w-auto" onchange="updateVulnChart(this.value)">
+                        <option value="all">Todos los escaneos</option>
+                        {% if recent_scans %}
+                        {% for scan in recent_scans %}
+                        <option value="{{ scan.scan_id }}">{{ scan.target }} ({{ scan.start_time|datetime('%Y-%m-%d') }})</option>
+                        {% endfor %}
+                        {% endif %}
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="max-height: 280px; position: relative;">
+                    <canvas id="vulnSeverityChart"></canvas>
+                </div>
+                <div id="vulnChartInfo" class="mt-2 text-center text-muted">
+                    <small>Mostrando todas las vulnerabilidades</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i data-lucide="target"></i> Top Dominios Vulnerables</h5>
+            </div>
+            <div class="card-body">
+                <div style="height: 320px;">
+                    <canvas id="topDomainsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Escaneos Recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i data-lucide="clock"></i> Escaneos Recientes</h5>
+                <a href="/scan/new" class="btn btn-sm btn-success">
+                    <i data-lucide="plus"></i> Nuevo Escaneo
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_scans %}
+                <div class="table-responsive">
+                    <table class="table table-hover" style="font-size: 0.95rem;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Objetivo</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for scan in recent_scans %}
+                            <tr>
+                                <td><code class="text-dark bg-light px-2 py-1" style="font-size: 0.85rem; font-weight: 600;">{{ scan.scan_id }}</code></td>
+                                <td><strong style="font-size: 1rem;">{{ scan.target }}</strong></td>
+                                <td>
+                                    <span class="badge bg-info">{{ scan.scan_type }}</span>
+                                </td>
+                                <td>
+                                    {% if scan.status == 'completed' %}
+                                        <span class="badge bg-success">Completado</span>
+                                    {% elif scan.status == 'running' %}
+                                        <span class="badge bg-warning">En progreso</span>
+                                    {% elif scan.status == 'failed' %}
+                                        <span class="badge bg-danger">Fallido</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ scan.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ scan.start_time|datetime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="/scan/{{ scan.scan_id }}" class="btn btn-sm btn-primary me-1">
+                                        <i data-lucide="eye"></i> Ver
+                                    </a>
+                                    <button onclick="deleteScan('{{ scan.scan_id }}')" class="btn btn-sm btn-danger" title="Eliminar escaneo">
+                                        <i data-lucide="trash-2"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i> No hay escaneos recientes. 
+                    <a href="/scan/new" class="alert-link">Inicia tu primer escaneo</a>.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// =============================
+// Gráfico de Vulnerabilidades por Severidad (Compacto)
+// =============================
+const vulnCtx = document.getElementById('vulnSeverityChart').getContext('2d');
+let vulnChart = new Chart(vulnCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Critical', 'High', 'Medium', 'Low', 'Info'],
+        datasets: [{
+            data: [
+                {{ stats.vulnerabilities_by_severity.get('critical', 0) }},
+                {{ stats.vulnerabilities_by_severity.get('high', 0) }},
+                {{ stats.vulnerabilities_by_severity.get('medium', 0) }},
+                {{ stats.vulnerabilities_by_severity.get('low', 0) }},
+                {{ stats.vulnerabilities_by_severity.get('info', 0) }}
+            ],
+            backgroundColor: [
+                '#dc3545',
+                '#fd7e14',
+                '#ffc107',
+                '#6c757d',
+                '#0dcaf0'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'right',
+                labels: {
+                    boxWidth: 12,
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Función para actualizar gráfico de vulnerabilidades
+function updateVulnChart(scanId) {
+    if (scanId === 'all') {
+        // Mostrar todas las vulnerabilidades (datos iniciales)
+        vulnChart.data.datasets[0].data = [
+            {{ stats.vulnerabilities_by_severity.get('critical', 0) }},
+            {{ stats.vulnerabilities_by_severity.get('high', 0) }},
+            {{ stats.vulnerabilities_by_severity.get('medium', 0) }},
+            {{ stats.vulnerabilities_by_severity.get('low', 0) }},
+            {{ stats.vulnerabilities_by_severity.get('info', 0) }}
+        ];
+        document.getElementById('vulnChartInfo').innerHTML = '<small>Mostrando todas las vulnerabilidades</small>';
+    } else {
+        // Aquí se haría una llamada AJAX para obtener las vulnerabilidades de un escaneo específico
+        // Por ahora, mostrar mensaje
+        console.log('Filtrar por escaneo:', scanId);
+        document.getElementById('vulnChartInfo').innerHTML = '<small>Filtrando por escaneo: ' + scanId + '</small>';
+
+        // TODO: Implementar fetch a /api/scan/<scan_id>/vulnerabilities
+        // y actualizar el gráfico con esos datos
+    }
+    vulnChart.update();
+}
+
+// =============================
+// Gráfico de Top Dominios Vulnerables
+// =============================
+const topDomainsCtx = document.getElementById('topDomainsChart').getContext('2d');
+
+// Datos de escaneos recientes (solo con vulnerabilidades)
+{% set scans_with_vulns = recent_scans|selectattr('vuln_count', 'gt', 0)|list %}
+{% if scans_with_vulns %}
+const topDomains = [
+    {% for scan in scans_with_vulns[:5] %}
+    '{{ scan.target }}'{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+const topScanIds = [
+    {% for scan in scans_with_vulns[:5] %}
+    '{{ scan.scan_id }}'{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+const topVulnCounts = [
+    {% for scan in scans_with_vulns[:5] %}
+    {{ scan.vuln_count or 0 }}{% if not loop.last %},{% endif %}
+    {% endfor %}
+];
+{% else %}
+const topDomains = ['Sin datos'];
+const topScanIds = [''];
+const topVulnCounts = [0];
+{% endif %}
+
+const topDomainsChart = new Chart(topDomainsCtx, {
+    type: 'bar',
+    data: {
+        labels: topDomains,
+        datasets: [{
+            label: 'Vulnerabilidades',
+            data: topVulnCounts,
+            backgroundColor: [
+                '#dc3545',
+                '#fd7e14',
+                '#ffc107',
+                '#17a2b8',
+                '#6c757d'
+            ],
+            borderWidth: 1,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        onClick: (event, elements) => {
+            if (elements.length > 0) {
+                const index = elements[0].index;
+                const scanId = topScanIds[index];
+                if (scanId) {
+                    window.location.href = '/scan/' + scanId;
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.parsed.x + ' vulnerabilidades (Click para ver)';
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 5
+                },
+                grid: {
+                    display: true,
+                    color: '#e0e0e0'
+                }
+            },
+            y: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Agregar cursor pointer al gráfico
+topDomainsCtx.canvas.style.cursor = 'pointer';
+
+// =============================
+// Funciones de interacción
+// =============================
+
+// Scroll a la tabla de escaneos
+function scrollToScans() {
+    document.querySelector('.table-responsive').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Ir al último escaneo con vulnerabilidades
+function goToLastScanVulns() {
+    {% if recent_scans %}
+    {% for scan in recent_scans %}
+    {% if loop.first %}
+    window.location.href = '/scan/{{ scan.scan_id }}#vulnerabilities';
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    alert('No hay escaneos disponibles');
+    {% endif %}
+}
+
+// Filtrar tabla por estado
+function filterByStatus(status) {
+    scrollToScans();
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const badge = row.querySelector('.badge');
+        if (badge) {
+            const rowStatus = badge.textContent.toLowerCase();
+            if (status === 'completed' && rowStatus.includes('completado')) {
+                row.style.display = '';
+                row.classList.add('table-success');
+                setTimeout(() => row.classList.remove('table-success'), 2000);
+            } else if (status === 'running' && rowStatus.includes('progreso')) {
+                row.style.display = '';
+                row.classList.add('table-warning');
+                setTimeout(() => row.classList.remove('table-warning'), 2000);
+            } else if (status === 'failed' && rowStatus.includes('fallido')) {
+                row.style.display = '';
+                row.classList.add('table-danger');
+                setTimeout(() => row.classList.remove('table-danger'), 2000);
+            } else {
+                row.style.opacity = '0.3';
+                setTimeout(() => row.style.opacity = '1', 2000);
+            }
+        }
+    });
+}
+
+// Eliminar escaneo
+function deleteScan(scanId) {
+    if (!confirm(`¿Estás seguro de eliminar el escaneo ${scanId}?`)) {
+        return;
+    }
+
+    fetch(`/api/scan/${scanId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Escaneo eliminado exitosamente');
+            location.reload();
+        } else {
+            alert('Error al eliminar escaneo: ' + (data.error || 'Desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar escaneo: ' + error);
+    });
+}
+
+// Efectos hover para cards clickeables
+document.querySelectorAll('.clickable-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.02)';
+        this.style.transition = 'transform 0.2s';
+    });
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+    });
+});
+</script>
+{% endblock %}

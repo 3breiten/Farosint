@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Resultados - FAROSINT{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-0">
+            <i data-lucide="database"></i> Historial de Escaneos
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Todos los Escaneos</h5>
+            </div>
+            <div class="card-body">
+                {% if scans %}
+                <table id="scansTable" class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Scan ID</th>
+                            <th>Objetivo</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in scans %}
+                        <tr>
+                            <td><code>{{ scan.scan_id }}</code></td>
+                            <td>{{ scan.target }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ scan.scan_type }}</span>
+                            </td>
+                            <td>
+                                {% if scan.status == 'completed' %}
+                                    <span class="badge bg-success">Completado</span>
+                                {% elif scan.status == 'running' %}
+                                    <span class="badge bg-warning">En progreso</span>
+                                {% elif scan.status == 'failed' %}
+                                    <span class="badge bg-danger">Fallido</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ scan.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if scan.start_time %}
+                                    {% set dt = scan.start_time.replace('T', ' ')[:19] %}
+                                    {{ dt }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if scan.end_time %}
+                                    {% set dt = scan.end_time.replace('T', ' ')[:19] %}
+                                    {{ dt }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="/scan/{{ scan.scan_id }}" class="btn btn-sm btn-primary">
+                                    <i data-lucide="eye"></i> Ver
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i> No hay escaneos registrados. 
+                    <a href="/scan/new" class="alert-link">Inicia tu primer escaneo</a>.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#scansTable').DataTable({
+        pageLength: 25,
+        order: [[4, 'desc']], // Ordenar por fecha de inicio descendente
+        language: {
+            search: "Buscar:",
+            lengthMenu: "Mostrar _MENU_ registros",
+            info: "Mostrando _START_ a _END_ de _TOTAL_ escaneos",
+            infoEmpty: "No hay escaneos",
+            infoFiltered: "(filtrado de _MAX_ total)",
+            paginate: {
+                first: "Primero",
+                last: "Último",
+                next: "Siguiente",
+                previous: "Anterior"
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

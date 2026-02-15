@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Escaneo - FAROSINT{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0"><i data-lucide="radar"></i> Nuevo Escaneo OSINT</h4>
+            </div>
+            <div class="card-body">
+                <form id="scanForm">
+                    <!-- Objetivo -->
+                    <div class="mb-3">
+                        <label for="target" class="form-label">Objetivo *</label>
+                        <input type="text"
+                               class="form-control"
+                               id="target"
+                               name="target"
+                               placeholder="example.com o 192.168.1.0/24"
+                               required>
+                        <div class="form-text">
+                            Dominio: <code>example.com</code> | IP: <code>192.168.1.100</code> |
+                            CIDR: <code>192.168.1.0/24</code> | Rango: <code>192.168.1.1-50</code>
+                        </div>
+                    </div>
+                    
+                    <!-- Tipo de Escaneo -->
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Escaneo *</label>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="scan_type"
+                                           id="scanQuick"
+                                           value="quick"
+                                           checked>
+                                    <label class="form-check-label" for="scanQuick">
+                                        <strong>Quick (Rápido)</strong>
+                                        <div class="text-muted small">
+                                            Escaneo básico (5-15 min)
+                                            <ul class="mt-1 mb-0 small">
+                                                <li>Subfinder (subdominios)</li>
+                                                <li>Httpx (servicios web)</li>
+                                                <li>Nmap quick (top 100 puertos)</li>
+                                                <li>WhatWeb (tecnologías)</li>
+                                            </ul>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="scan_type"
+                                           id="scanFull"
+                                           value="full">
+                                    <label class="form-check-label" for="scanFull">
+                                        <strong>Full (Completo)</strong>
+                                        <div class="text-muted small">
+                                            Escaneo profundo (30-90 min)
+                                            <ul class="mt-1 mb-0 small">
+                                                <li>Subfinder + Amass (enum)</li>
+                                                <li>Httpx (verificación web)</li>
+                                                <li>Nmap full (top 1000 puertos)</li>
+                                                <li>WhatWeb (tech fingerprint)</li>
+                                                <li>VulnMatcher (CVE correlation)</li>
+                                                <li>Nuclei (vulnerabilidades)</li>
+                                            </ul>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="scan_type"
+                                           id="scanLAN"
+                                           value="lan">
+                                    <label class="form-check-label" for="scanLAN">
+                                        <strong>LAN/Network</strong>
+                                        <div class="text-muted small">
+                                            Escaneo red local
+                                            <ul class="mt-1 mb-0">
+                                                <li>Host Discovery</li>
+                                                <li>Port Scanning</li>
+                                                <li>Service Detection</li>
+                                                <li>Nuclei (vulns)</li>
+                                            </ul>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="/" class="btn btn-secondary">
+                            <i data-lucide="x"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success" id="btnSubmit">
+                            <i data-lucide="play"></i> Iniciar Escaneo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Progress card (oculto por defecto) -->
+        <div id="scanProgressCard" class="card mt-3" style="display: none;">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Escaneo en Progreso
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong id="progressPhase">Iniciando...</strong>
+                    <span class="float-end" id="progressPercent">0%</span>
+                </div>
+                <div class="progress mb-2" style="height: 25px;">
+                    <div id="progressBar"
+                         class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                         role="progressbar"
+                         style="width: 0%"
+                         aria-valuenow="0"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        0%
+                    </div>
+                </div>
+                <small class="text-muted" id="progressMessage">Preparando escaneo...</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Manejar envío del formulario
+document.getElementById('scanForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const target = document.getElementById('target').value;
+    const scan_type = document.querySelector('input[name="scan_type"]:checked').value;
+    
+    // Deshabilitar botón
+    const btnSubmit = document.getElementById('btnSubmit');
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Iniciando...';
+    
+    // Mostrar progreso
+    document.getElementById('scanProgressCard').style.display = 'block';
+    
+    // Enviar request
+    fetch('/api/scan/start', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            target: target,
+            scan_type: scan_type
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Redirigir a la página de detalle
+            window.location.href = '/scan/' + data.scan_id;
+        } else {
+            alert('Error: ' + (data.error || 'Error desconocido'));
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i data-lucide="play"></i> Iniciar Escaneo';
+            lucide.createIcons();
+        }
+    })
+    .catch(error => {
+        alert('Error al iniciar escaneo: ' + error);
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i data-lucide="play"></i> Iniciar Escaneo';
+        lucide.createIcons();
+    });
+});
+
+// WebSocket para progreso en tiempo real
+const socket = io();
+
+socket.on('scan_started', function(data) {
+    document.getElementById('progressPhase').textContent = 'Escaneo iniciado';
+    document.getElementById('progressMessage').textContent = 'Target: ' + data.target;
+});
+
+socket.on('scan_progress', function(data) {
+    // Actualizar fase
+    document.getElementById('progressPhase').textContent = data.phase;
+
+    // Actualizar porcentaje
+    const percent = data.percent;
+    document.getElementById('progressPercent').textContent = percent + '%';
+    document.getElementById('progressBar').style.width = percent + '%';
+    document.getElementById('progressBar').setAttribute('aria-valuenow', percent);
+    document.getElementById('progressBar').textContent = percent + '%';
+
+    // Actualizar mensaje
+    document.getElementById('progressMessage').textContent = data.message;
+
+    // Cambiar color según progreso
+    const progressBar = document.getElementById('progressBar');
+    progressBar.classList.remove('bg-success', 'bg-info', 'bg-warning');
+    if (percent < 30) {
+        progressBar.classList.add('bg-info');
+    } else if (percent < 70) {
+        progressBar.classList.add('bg-warning');
+    } else {
+        progressBar.classList.add('bg-success');
+    }
+});
+
+socket.on('scan_completed', function(data) {
+    document.getElementById('progressPhase').textContent = 'Completado';
+    document.getElementById('progressPercent').textContent = '100%';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressBar').textContent = '100%';
+    document.getElementById('progressMessage').textContent = 'Escaneo completado! Redirigiendo...';
+
+    // Redirigir después de 2 segundos
+    setTimeout(function() {
+        window.location.href = '/scan/' + data.scan_id;
+    }, 2000);
+});
+
+socket.on('scan_failed', function(data) {
+    document.getElementById('progressPhase').textContent = 'Error';
+    document.getElementById('progressMessage').textContent = 'Escaneo fallido: ' + data.error;
+    document.getElementById('progressBar').classList.remove('bg-success', 'bg-warning', 'bg-info');
+    document.getElementById('progressBar').classList.add('bg-danger');
+});
+</script>
+{% endblock %}

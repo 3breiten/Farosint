@@ -1,0 +1,336 @@
+/* 
+ * FAROSINT Dashboard CSS
+ * Estilos personalizados para el dashboard
+ */
+
+/* =============================
+   Variables y Tema Oscuro
+   ============================= */
+:root {
+    --farosint-primary: #00d4ff;
+    --farosint-dark: #1a1d29;
+    --farosint-darker: #0f1117;
+    --farosint-success: #00ff88;
+    --farosint-danger: #ff0055;
+    --farosint-warning: #ffd700;
+}
+
+/* =============================
+   Body y Layout General
+   ============================= */
+body {
+    background-color: #f8f9fa;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+/* =============================
+   Navbar
+   ============================= */
+.navbar-brand img {
+    filter: drop-shadow(0 0 5px var(--farosint-primary));
+}
+
+.navbar-dark .navbar-nav .nav-link {
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.3s ease;
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+    color: var(--farosint-primary);
+}
+
+/* =============================
+   Cards
+   ============================= */
+.card {
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.card-header {
+    border-bottom: 2px solid var(--farosint-primary);
+    font-weight: 600;
+}
+
+/* =============================
+   Badges
+   ============================= */
+.badge {
+    font-weight: 500;
+    padding: 0.5em 0.75em;
+}
+
+/* =============================
+   Botones
+   ============================= */
+.btn {
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #146c43;
+}
+
+/* =============================
+   Tables
+   ============================= */
+.table {
+    font-size: 0.9rem;
+}
+
+.table thead th {
+    background-color: var(--farosint-dark);
+    color: white;
+    border: none;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 212, 255, 0.05);
+}
+
+/* DataTables personalización */
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    border-radius: 0.25rem;
+    padding: 0.375rem 2rem 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+}
+
+/* =============================
+   Footer
+   ============================= */
+.footer {
+    background-color: var(--farosint-dark);
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: auto;
+}
+
+/* =============================
+   Iconos Inline
+   ============================= */
+.icon-inline {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: text-bottom;
+    display: inline-block;
+}
+
+/* =============================
+   Alerts
+   ============================= */
+.alert {
+    border-left: 4px solid;
+    border-radius: 0.25rem;
+}
+
+.alert-info {
+    border-left-color: var(--farosint-primary);
+}
+
+.alert-success {
+    border-left-color: var(--farosint-success);
+}
+
+.alert-warning {
+    border-left-color: var(--farosint-warning);
+}
+
+.alert-danger {
+    border-left-color: var(--farosint-danger);
+}
+
+/* =============================
+   Forms
+   ============================= */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--farosint-primary);
+    box-shadow: 0 0 0 0.25rem rgba(0, 212, 255, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--farosint-primary);
+    border-color: var(--farosint-primary);
+}
+
+/* =============================
+   Tabs
+   ============================= */
+.nav-tabs {
+    border-bottom: 2px solid var(--farosint-primary);
+}
+
+.nav-tabs .nav-link {
+    color: #6c757d;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: var(--farosint-primary);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--farosint-primary);
+    border-color: transparent transparent var(--farosint-primary);
+    background-color: transparent;
+}
+
+/* =============================
+   Code Blocks
+   ============================= */
+code {
+    color: var(--farosint-primary);
+    background-color: rgba(0, 212, 255, 0.1);
+    padding: 0.2em 0.4em;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+}
+
+pre {
+    background-color: var(--farosint-darker);
+    color: var(--farosint-success);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+}
+
+pre code {
+    background-color: transparent;
+    color: inherit;
+    padding: 0;
+}
+
+/* =============================
+   Progress Indicators
+   ============================= */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* =============================
+   Breadcrumb
+   ============================= */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: var(--farosint-primary);
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+/* =============================
+   Animaciones
+   ============================= */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* =============================
+   Responsive
+   ============================= */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .table {
+        font-size: 0.8rem;
+    }
+    
+    h1 {
+        font-size: 1.75rem;
+    }
+    
+    h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* =============================
+   Utilidades
+   ============================= */
+.text-farosint {
+    color: var(--farosint-primary) !important;
+}
+
+.bg-farosint {
+    background-color: var(--farosint-primary) !important;
+}
+
+.border-farosint {
+    border-color: var(--farosint-primary) !important;
+}
+
+/* Sombra de texto para títulos */
+.text-glow {
+    text-shadow: 0 0 10px var(--farosint-primary);
+}
+
+/* =============================
+   Dark Mode Cards (opcional)
+   ============================= */
+.card.bg-dark {
+    background-color: var(--farosint-dark) !important;
+}
+
+.card.bg-dark .card-header {
+    background-color: var(--farosint-darker) !important;
+}

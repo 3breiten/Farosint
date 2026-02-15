@@ -1,0 +1,1934 @@
+{% extends "base.html" %}
+
+{% block title %}Escaneo {{ scan.scan_id }} - FAROSINT{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Estilos para Modo Oscuro */
+body.dark-mode {
+    background-color: #212529;
+    color: #f8f9fa;
+}
+
+body.dark-mode .card {
+    background-color: #343a40;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .card-body {
+    color: #f8f9fa;
+}
+
+body.dark-mode .breadcrumb {
+    background-color: #343a40;
+}
+
+body.dark-mode .breadcrumb-item a {
+    color: #0dcaf0;
+}
+
+body.dark-mode .breadcrumb-item.active {
+    color: #adb5bd;
+}
+
+body.dark-mode code {
+    background-color: #495057;
+    color: #f8c555;
+}
+
+body.dark-mode .table {
+    color: #f8f9fa;
+    --bs-table-bg: transparent;
+}
+
+body.dark-mode .table thead {
+    background-color: #495057;
+    color: #f8f9fa;
+}
+
+body.dark-mode .table th {
+    background-color: #495057;
+    color: #f8f9fa;
+    border-color: #6c757d;
+}
+
+body.dark-mode .table td {
+    border-color: #6c757d;
+    color: #f8f9fa;
+}
+
+body.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.075);
+    color: #f8f9fa;
+}
+
+body.dark-mode .nav-tabs {
+    border-bottom-color: #495057;
+}
+
+body.dark-mode .nav-tabs .nav-link {
+    color: #adb5bd;
+    background-color: #343a40;
+    border-color: #495057;
+}
+
+body.dark-mode .nav-tabs .nav-link:hover {
+    border-color: #6c757d;
+    color: #f8f9fa;
+}
+
+body.dark-mode .nav-tabs .nav-link.active {
+    background-color: #212529;
+    border-color: #495057 #495057 #212529;
+    color: #f8f9fa;
+}
+
+body.dark-mode .tab-content {
+    background-color: #212529;
+}
+
+body.dark-mode .alert-info {
+    background-color: #0c5460;
+    border-color: #0c5460;
+    color: #d1ecf1;
+}
+
+body.dark-mode .badge {
+    background-color: #495057 !important;
+}
+
+/* Tamaño de fuente consistente para todas las tablas */
+.table {
+    font-size: 1.05rem;
+}
+
+.table th,
+.table td {
+    font-size: 1.05rem;
+}
+
+/* Modo Claro */
+body.light-mode {
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+body.light-mode .card {
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+}
+
+body.light-mode .card-header.bg-dark {
+    background-color: #0d6efd !important;
+}
+
+body.light-mode code {
+    background-color: #e9ecef;
+    color: #d63384;
+}
+
+/* Estilos para el Grafo */
+#cy {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode #cy {
+    background: #1a1a1a !important;
+    border-color: #495057 !important;
+}
+
+.graph-legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    font-size: 0.85rem;
+    z-index: 100;
+}
+
+body.dark-mode .graph-legend {
+    background: #343a40;
+    color: #f8f9fa;
+}
+
+.graph-legend-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.graph-legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 2px solid #333;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="/results">Resultados</a></li>
+                <li class="breadcrumb-item active">{{ scan.scan_id }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Información del Escaneo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i data-lucide="info"></i> Información del Escaneo
+                </h4>
+                <div class="btn-group" role="group">
+                    <!-- Botón de Exportar PDF -->
+                    <a href="/api/scan/{{ scan.scan_id }}/export/pdf" class="btn btn-primary btn-sm" target="_blank">
+                        <i data-lucide="file-text"></i> Exportar PDF
+                    </a>
+                    <!-- Botón de Eliminar -->
+                    <button onclick="deleteScan('{{ scan.scan_id }}')" class="btn btn-danger btn-sm">
+                        <i data-lucide="trash-2"></i> Eliminar Escaneo
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Scan ID:</strong><br>
+                        <code>{{ scan.scan_id }}</code>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Objetivo:</strong><br>
+                        {{ scan.target }}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Tipo:</strong><br>
+                        <span class="badge bg-info">{{ scan.scan_type }}</span>
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Estado:</strong><br>
+                        {% if scan.status == 'completed' %}
+                            <span class="badge bg-success">Completado</span>
+                        {% elif scan.status == 'running' %}
+                            <span class="badge bg-warning">En progreso</span>
+                        {% elif scan.status == 'failed' %}
+                            <span class="badge bg-danger">Fallido</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ scan.status }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-2">
+                        <strong>Fecha:</strong><br>
+                        {{ scan.start_time|datetime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Barra de Progreso en Tiempo Real (solo si está running) -->
+{% if scan.status == 'running' %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span id="progressPhase">Escaneo en Progreso</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong id="progressMessage">Ejecutando escaneo...</strong>
+                    <span class="float-end fw-bold" id="progressPercent">0%</span>
+                </div>
+                <div class="progress" style="height: 30px;">
+                    <div id="progressBar"
+                         class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                         role="progressbar"
+                         style="width: 0%"
+                         aria-valuenow="0"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                        0%
+                    </div>
+                </div>
+                <small class="text-muted mt-2 d-block">
+                    <i data-lucide="clock"></i> El escaneo se actualizará automáticamente al completarse
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Resumen de Resultados -->
+<div class="row mb-4">
+    {% if is_lan_scan %}
+    <!-- Resumen para escaneo LAN -->
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ lan_info.hosts|length if lan_info else 1 }}</h3>
+                <p class="mb-0"><i data-lucide="monitor" style="width:16px;height:16px;"></i> Hosts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ services|length }}</h3>
+                <p class="mb-0"><i data-lucide="server" style="width:16px;height:16px;"></i> Servicios</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <h3>{{ vulnerabilities|length }}</h3>
+                <p class="mb-0"><i data-lucide="shield-alert" style="width:16px;height:16px;"></i> Vulnerabilidades</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ lan_info.open_ports if lan_info else 0 }}</h3>
+                <p class="mb-0"><i data-lucide="unlock" style="width:16px;height:16px;"></i> Puertos Abiertos</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Resumen para escaneo de dominio -->
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3>{{ subdomains|length }}</h3>
+                <p class="mb-0">Subdominios</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3>{{ services|length }}</h3>
+                <p class="mb-0">Servicios</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body text-center">
+                <h3>{{ vulnerabilities|length }}</h3>
+                <p class="mb-0">Vulnerabilidades</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3>{{ raw_results.alive_urls|length if raw_results else 0 }}</h3>
+                <p class="mb-0">URLs Activas</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs" id="resultTabs" role="tablist">
+    {% if is_lan_scan %}
+    <!-- Tabs para escaneo LAN -->
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button">
+            <i data-lucide="server"></i> Servicios ({{ services|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="vulnerabilities-tab" data-bs-toggle="tab" data-bs-target="#vulnerabilities" type="button">
+            <i data-lucide="shield-alert"></i> Vulnerabilidades ({{ vulnerabilities|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="lan-info-tab" data-bs-toggle="tab" data-bs-target="#lan-info" type="button">
+            <i data-lucide="wifi"></i> Info de Red
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="graph-tab" data-bs-toggle="tab" data-bs-target="#graph" type="button">
+            <i data-lucide="network"></i> Grafo Interactivo
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button">
+            <i data-lucide="code"></i> JSON Raw
+        </button>
+    </li>
+    {% else %}
+    <!-- Tabs para escaneo de dominio -->
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="subdomains-tab" data-bs-toggle="tab" data-bs-target="#subdomains" type="button">
+            <i data-lucide="globe"></i> Subdominios ({{ subdomains|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="urls-tab" data-bs-toggle="tab" data-bs-target="#urls" type="button">
+            <i data-lucide="link"></i> URLs Activas ({{ raw_results.alive_urls|length if raw_results and raw_results.alive_urls else 0 }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button">
+            <i data-lucide="server"></i> Servicios ({{ services|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="vulnerabilities-tab" data-bs-toggle="tab" data-bs-target="#vulnerabilities" type="button">
+            <i data-lucide="shield-alert"></i> Vulnerabilidades ({{ vulnerabilities|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="graph-tab" data-bs-toggle="tab" data-bs-target="#graph" type="button">
+            <i data-lucide="network"></i> Grafo Interactivo
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button">
+            <i data-lucide="code"></i> JSON Raw
+        </button>
+    </li>
+    {% endif %}
+</ul>
+
+<div class="tab-content p-3 border border-top-0" id="resultTabsContent">
+    <!-- Subdominios (solo para escaneos de dominio) -->
+    <div class="tab-pane fade {% if not is_lan_scan %}show active{% endif %}" id="subdomains" role="tabpanel">
+        {% if subdomains %}
+        <div class="table-responsive">
+            <table id="subdomainsTable" class="table table-striped table-hover" style="font-size: 1.05rem;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 40%">Subdominio</th>
+                        <th style="width: 25%">Descubrimiento</th>
+                        <th style="width: 15%">Estado</th>
+                        <th style="width: 10%">HTTP</th>
+                        <th style="width: 10%">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subdomain in subdomains %}
+                    <tr>
+                        <td>
+                            <code class="text-primary" style="font-size: 0.9rem;">{{ subdomain.subdomain }}</code>
+                            {% if subdomain.is_alive %}
+                            <i data-lucide="check-circle" class="text-success" style="width:16px;height:16px;" title="Verificado online"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if subdomain.source and subdomain.source != 'scan' %}
+                            <span class="badge bg-info">{{ subdomain.source }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Enumeración</span>
+                            {% endif %}
+                            {% if subdomain.is_alive %}
+                            <br><span class="badge bg-success mt-1">✓ Httpx</span>
+                            {% endif %}
+                        </td>
+                    <td>
+                        {% if subdomain.is_alive %}
+                            <span class="badge bg-success">
+                                <i data-lucide="wifi" style="width:12px;height:12px;"></i> Online
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i data-lucide="wifi-off" style="width:12px;height:12px;"></i> Offline
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if subdomain.http_status %}
+                        {% if subdomain.http_status < 300 %}
+                        <span class="badge bg-success">{{ subdomain.http_status }}</span>
+                        {% elif subdomain.http_status < 400 %}
+                        <span class="badge bg-info">{{ subdomain.http_status }}</span>
+                        {% elif subdomain.http_status < 500 %}
+                        <span class="badge bg-warning">{{ subdomain.http_status }}</span>
+                        {% else %}
+                        <span class="badge bg-danger">{{ subdomain.http_status }}</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if subdomain.is_alive %}
+                        <a href="http://{{ subdomain.subdomain }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir HTTP">
+                            <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+                        </a>
+                        <a href="https://{{ subdomain.subdomain }}" target="_blank" class="btn btn-sm btn-outline-success" title="Abrir HTTPS">
+                            <i data-lucide="lock" style="width:12px;height:12px;"></i>
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i data-lucide="info"></i> No se encontraron subdominios.
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- URLs Activas -->
+    <div class="tab-pane fade" id="urls" role="tabpanel">
+        {% if raw_results and raw_results.alive_urls %}
+        <div class="table-responsive">
+        <table id="urlsTable" class="table table-striped table-hover" style="font-size: 1.05rem;">
+            <thead class="table-dark">
+                <tr>
+                    <th>URL</th>
+                    <th>Host</th>
+                    <th>Status</th>
+                    <th>Título</th>
+                    <th>Tecnologías</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for url_info in raw_results.alive_urls %}
+                <tr>
+                    <td><code>{{ url_info.url }}</code></td>
+                    <td>{{ url_info.host }}</td>
+                    <td>
+                        {% if url_info.status_code %}
+                            {% if url_info.status_code < 300 %}
+                                <span class="badge bg-success">{{ url_info.status_code }}</span>
+                            {% elif url_info.status_code < 400 %}
+                                <span class="badge bg-info">{{ url_info.status_code }}</span>
+                            {% elif url_info.status_code < 500 %}
+                                <span class="badge bg-warning">{{ url_info.status_code }}</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ url_info.status_code }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary">N/A</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ url_info.title[:50] if url_info.title else '-' }}</td>
+                    <td>
+                        {% if url_info.tech %}
+                            {{ url_info.tech|join(', ') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_info.url }}" target="_blank" class="btn btn-sm btn-primary">
+                            <i data-lucide="external-link"></i> Abrir
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i data-lucide="info"></i> No hay URLs activas registradas.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Servicios -->
+    <div class="tab-pane fade {% if is_lan_scan %}show active{% endif %}" id="services" role="tabpanel">
+        {% if services %}
+
+        {% if is_lan_scan %}
+        <!-- Nota explicativa sobre niveles de riesgo -->
+        <div class="alert alert-info d-flex align-items-start mb-3" style="font-size:0.9rem;">
+            <i data-lucide="info" style="width:16px;height:16px;min-width:16px;margin-right:8px;margin-top:2px;"></i>
+            <div>
+                <strong>Nivel de riesgo del servicio</strong> vs <strong>Vulnerabilidades detectadas</strong>:
+                El <em>nivel de riesgo</em> (⛔/⚠) clasifica el <em>puerto</em> según su historial — por ej., el puerto 445 (SMB) es inherentemente peligroso en Windows 7 aunque no se haya confirmado el exploit.
+                Las <strong>vulnerabilidades</strong> (pestaña Vulnerabilidades) son CVEs <em>confirmados activamente</em> por el scanner: scripts NSE, NVD API, o herramientas específicas.
+            </div>
+        </div>
+
+        <!-- Vista mejorada para LAN: cards por host con contexto de riesgo -->
+        {# Diccionario de puertos conocidos con descripción y nivel de riesgo #}
+        {% set CRITICAL_PORTS = [23, 139, 445, 512, 513, 514, 3389, 4444, 6379, 9200, 9201, 27017] %}
+        {% set HIGH_PORTS = [21, 111, 135, 137, 138, 161, 389, 1433, 1521, 2049, 3306, 5432, 5900, 5985, 5986, 8080] %}
+
+        {% set port_names = {
+            21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP', 53: 'DNS',
+            80: 'HTTP', 110: 'POP3', 111: 'RPC', 135: 'MS-RPC', 137: 'NetBIOS-NS',
+            138: 'NetBIOS-DGM', 139: 'NetBIOS-SSN', 143: 'IMAP', 161: 'SNMP',
+            389: 'LDAP', 443: 'HTTPS', 445: 'SMB', 512: 'rexec', 513: 'rlogin',
+            514: 'rsh', 636: 'LDAPS', 993: 'IMAPS', 995: 'POP3S',
+            1433: 'MSSQL', 1521: 'Oracle', 2049: 'NFS', 3306: 'MySQL',
+            3389: 'RDP', 4444: 'Shell?', 5432: 'PostgreSQL', 5900: 'VNC',
+            5985: 'WinRM', 5986: 'WinRM-S', 6379: 'Redis', 8080: 'HTTP-Alt',
+            8443: 'HTTPS-Alt', 8888: 'HTTP-Dev', 9200: 'Elasticsearch', 27017: 'MongoDB'
+        } %}
+        {% set port_descs = {
+            21: 'Transferencia de archivos (sin cifrado)',
+            22: 'Acceso remoto seguro (SSH)',
+            23: '⚠ Telnet: acceso remoto SIN cifrado (peligroso)',
+            25: 'Servidor de correo saliente',
+            53: 'Resolución de nombres DNS',
+            80: 'Servidor web (tráfico en claro)',
+            111: 'Remote Procedure Call (portmapper)',
+            135: '⚠ Windows RPC – vector de ataques remotos (MS03-026)',
+            137: 'NetBIOS Name Service – expone nombres Windows',
+            138: 'NetBIOS Datagram Service',
+            139: '⚠ NetBIOS / SMBv1 – vulnerable a EternalBlue (MS17-010)',
+            161: '⚠ SNMP – expone info del sistema si community=public',
+            389: 'LDAP – Directorio (Active Directory)',
+            443: 'Servidor web cifrado (HTTPS)',
+            445: '⚠ SMB – compartición Windows, vulnerable a EternalBlue, MS08-067',
+            512: '⚠ rexec – ejecución remota sin autenticación robusta',
+            513: '⚠ rlogin – login remoto sin cifrado',
+            514: '⚠ rsh – shell remoto sin autenticación',
+            1433: 'Microsoft SQL Server',
+            1521: 'Oracle Database',
+            2049: 'NFS – compartición de archivos Unix',
+            3306: 'MySQL / MariaDB',
+            3389: '⚠ RDP – Escritorio Remoto (BlueKeep CVE-2019-0708)',
+            4444: '⚠ Puerto típico de reverse shells / Metasploit',
+            5432: 'PostgreSQL',
+            5900: 'VNC – control remoto de escritorio',
+            5985: 'WinRM HTTP – administración remota Windows',
+            5986: 'WinRM HTTPS – administración remota Windows',
+            6379: '⚠ Redis sin autenticación (frecuentemente expuesto)',
+            8080: 'Servidor web alternativo (HTTP)',
+            8443: 'Servidor web alternativo (HTTPS)',
+            9200: '⚠ Elasticsearch sin auth (frecuentemente expuesto)',
+            27017: '⚠ MongoDB sin auth (frecuentemente expuesto)'
+        } %}
+
+        {# Agrupar servicios por IP #}
+        {% set ns = namespace(current_ip='', ip_services=[]) %}
+        {% set grouped = {} %}
+        {% for service in services %}
+            {% if service.ip not in grouped %}
+                {% set _ = grouped.update({service.ip: []}) %}
+            {% endif %}
+        {% endfor %}
+
+        {% for host_ip in grouped.keys() %}
+        {% set host_services = services | selectattr('ip', 'equalto', host_ip) | list %}
+        {% set crit_count = host_services | selectattr('port', 'in', CRITICAL_PORTS) | list | length %}
+        {% set high_count = host_services | selectattr('port', 'in', HIGH_PORTS) | list | length %}
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center" style="background:#343a40;color:white;">
+                <div>
+                    <i data-lucide="monitor" style="width:18px;height:18px;vertical-align:middle;"></i>
+                    <code style="color:#ffc107;font-size:1.1rem;"> {{ host_ip }}</code>
+                    <span class="badge bg-secondary ms-2">{{ host_services|length }} puertos</span>
+                </div>
+                <div>
+                    {% if crit_count > 0 %}
+                    <span class="badge bg-danger me-1">⛔ {{ crit_count }} críticos</span>
+                    {% endif %}
+                    {% if high_count > 0 %}
+                    <span class="badge bg-warning text-dark">⚠ {{ high_count }} altos</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" style="font-size:0.93rem;">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th style="width:80px;">Puerto</th>
+                                <th style="width:110px;">Servicio</th>
+                                <th>Descripción / Riesgo</th>
+                                <th style="width:90px;">Nivel</th>
+                                <th>Producto detectado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for service in host_services | sort(attribute='port') %}
+                        {% set p = service.port %}
+                        {% set svc_lower = (service.service or '') | lower %}
+                        {% if p in CRITICAL_PORTS or 'telnet' in svc_lower or 'ms-wbt' in svc_lower %}
+                            {% set risk = 'critical' %}
+                            {% set row_class = 'table-danger' %}
+                            {% set badge_class = 'bg-danger' %}
+                            {% set risk_label = '⛔ CRÍTICO' %}
+                        {% elif p in HIGH_PORTS or 'ftp' in svc_lower or 'rpc' in svc_lower or 'netbios' in svc_lower or 'snmp' in svc_lower or 'microsoft-ds' in svc_lower or 'rdp' in svc_lower %}
+                            {% set risk = 'high' %}
+                            {% set row_class = 'table-warning' %}
+                            {% set badge_class = 'bg-warning text-dark' %}
+                            {% set risk_label = '⚠ ALTO' %}
+                        {% elif 'http' in svc_lower or 'smtp' in svc_lower or 'dns' in svc_lower or 'ssh' in svc_lower or 'ldap' in svc_lower %}
+                            {% set risk = 'medium' %}
+                            {% set row_class = '' %}
+                            {% set badge_class = 'bg-info' %}
+                            {% set risk_label = 'MEDIO' %}
+                        {% else %}
+                            {% set risk = 'low' %}
+                            {% set row_class = '' %}
+                            {% set badge_class = 'bg-success' %}
+                            {% set risk_label = 'BAJO' %}
+                        {% endif %}
+
+                        <tr class="{{ row_class }}">
+                            <td><strong>{{ p }}</strong><span class="text-muted">/{{ service.protocol }}</span></td>
+                            <td>
+                                <span class="badge {{ badge_class }}">
+                                    {{ port_names.get(p, (service.service or 'Unknown') | upper) }}
+                                </span>
+                            </td>
+                            <td><small>{{ port_descs.get(p, service.service or '') }}</small></td>
+                            <td><span class="badge {{ badge_class }}">{{ risk_label }}</span></td>
+                            <td>
+                                {% if service.product or service.version %}
+                                <small><strong>{{ service.product or '' }}</strong>
+                                {% if service.version %} <span class="text-muted">{{ service.version }}</span>{% endif %}
+                                </small>
+                                {% else %}<small class="text-muted">-</small>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <!-- Vista para domain scans: tabla con filtros -->
+        <div class="table-responsive">
+            <table id="servicesTable" class="table table-striped table-hover" style="font-size: 1.05rem; width: 100%;">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="min-width: 150px;">Host / IP</th>
+                        <th style="width: 100px;">Puerto</th>
+                        <th style="min-width: 130px;">Servicio</th>
+                        <th style="min-width: 200px;">Producto / Versión</th>
+                    </tr>
+                    <tr class="table-light">
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar IP..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Ej: 80..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar servicio..."></th>
+                        <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar producto..."></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in services %}
+                    <tr>
+                        <td><code class="text-primary" style="font-size: 0.9rem;">{{ service.ip }}</code></td>
+                        <td><strong style="font-size: 1rem;">{{ service.port }}<span class="text-muted">/{{ service.protocol }}</span></strong></td>
+                        <td>
+                            {% set svc = (service.service or '') | lower %}
+                            {% if 'http' in svc and 'https' not in svc %}<span class="badge bg-info fs-6">HTTP</span>
+                            {% elif 'https' in svc or 'ssl' in svc %}<span class="badge bg-success fs-6">HTTPS</span>
+                            {% elif 'ssh' in svc %}<span class="badge bg-warning text-dark fs-6">SSH</span>
+                            {% elif 'ftp' in svc %}<span class="badge bg-primary fs-6">FTP</span>
+                            {% elif 'mysql' in svc %}<span class="badge bg-danger fs-6">MySQL</span>
+                            {% elif 'rdp' in svc or 'ms-wbt' in svc %}<span class="badge bg-danger fs-6">RDP</span>
+                            {% elif 'smb' in svc or 'microsoft-ds' in svc %}<span class="badge bg-dark fs-6">SMB</span>
+                            {% else %}<span class="badge bg-dark fs-6">{{ service.service | upper }}</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if service.product or service.version %}
+                            <small><strong>{{ service.product or '' }}</strong>
+                            {% if service.version %}<span class="text-muted"> {{ service.version }}</span>{% endif %}
+                            </small>
+                            {% else %}<small class="text-muted">-</small>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="alert alert-info">
+            <i data-lucide="info"></i> No se encontraron servicios.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Vulnerabilidades -->
+    <div class="tab-pane fade" id="vulnerabilities" role="tabpanel">
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <select id="severityFilter" class="form-select form-select-sm">
+                    <option value="">Todas las severidades</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                    <option value="info">Info</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hideInfo" checked>
+                    <label class="form-check-label" for="hideInfo">
+                        Ocultar detecciones informativas (WAF, TLS, etc.)
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-info fs-6">
+                    <i data-lucide="filter"></i>
+                    <span id="vulnShown">0</span>
+                </span>
+            </div>
+        </div>
+
+        {% if vulnerabilities %}
+        <table class="table table-hover table-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 10%">Severidad</th>
+                    <th style="width: 40%">Vulnerabilidad</th>
+                    <th style="width: 25%">Target</th>
+                    <th style="width: 10%">CVE</th>
+                    <th style="width: 10%">CVSS</th>
+                    <th style="width: 5%"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vuln in vulnerabilities %}
+                {# TODAS las vulnerabilidades 'info' son detecciones informativas, no vulnerabilidades reales #}
+                {% set is_info_only = (vuln.severity == 'info') %}
+                <tr class="vuln-row" data-severity="{{ vuln.severity }}" data-info-only="{{ 'true' if is_info_only else 'false' }}" style="cursor: pointer;" onclick="toggleVulnDetails({{ loop.index }})">
+                    <td>{{ vuln.severity|severity_badge|safe }}</td>
+                    <td>
+                        <strong>{{ vuln.name }}</strong>
+                        {% if vuln.cve %}
+                        <br><small class="text-danger fw-bold"><i data-lucide="alert-circle" style="width:12px;height:12px;"></i> {{ vuln.cve }}</small>
+                        {% endif %}
+                    </td>
+                    <td><code class="small">{{ vuln.target }}</code></td>
+                    <td>
+                        {% if vuln.cve %}
+                        <a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cve }}" target="_blank" class="badge bg-danger text-decoration-none" title="Ver detalles en NVD">
+                            NVD
+                        </a>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if vuln.cvss and vuln.cvss > 0 %}
+                        <span class="badge bg-warning text-dark">{{ vuln.cvss }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <i data-lucide="chevron-down" class="chevron-icon" style="width:16px;height:16px;"></i>
+                    </td>
+                </tr>
+                <tr class="vuln-details" id="vulnDetails{{ loop.index }}" style="display: none;" data-severity="{{ vuln.severity }}" data-info-only="{{ 'true' if is_info_only else 'false' }}">
+                    <td colspan="6" class="bg-light">
+                        <div class="p-3">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h6 class="text-primary"><i data-lucide="info"></i> Detalles</h6>
+                                    {% if vuln.description %}
+                                    {% set clean_desc = vuln.description|replace('Referencias: mitre: https://attack.mitre.org/techniques/T1190/', '')|replace('Referencias: mitre: https://attack.mitre.org/techniques/T1190', '')|replace('\n\n\n', '\n\n')|trim %}
+                                    <p><strong>Descripción:</strong><br>{{ clean_desc|replace('\n', '<br>')|safe }}</p>
+                                    {% endif %}
+                                    <p><strong>Detectado en:</strong> <code>{{ vuln.matched_at or vuln.target }}</code></p>
+
+                                    {% if vuln.cve %}
+                                    <!-- Contenedor para datos enriquecidos de NVD -->
+                                    <div id="nvdData{{ loop.index }}" class="nvd-enriched" style="display:none;">
+                                        <hr>
+                                        <h6 class="text-success"><i data-lucide="database"></i> Datos de NVD</h6>
+                                        <div class="nvd-content">
+                                            <!-- Se llenará via AJAX -->
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <h6 class="text-primary"><i data-lucide="external-link"></i> Referencias y Recursos</h6>
+
+                                    {% if vuln.cve %}
+                                    <!-- Botón para cargar datos de NVD -->
+                                    <button class="btn btn-success btn-sm w-100 mb-2" onclick="loadNVDData('{{ vuln.cve }}', {{ loop.index }}, this)">
+                                        <i data-lucide="download-cloud"></i> Cargar Datos Reales de NVD
+                                    </button>
+
+                                    <!-- Bases de Datos Oficiales -->
+                                    <p class="small text-muted mb-1 mt-2"><strong>🔍 Bases CVE:</strong></p>
+                                    <a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cve }}" target="_blank" class="btn btn-sm btn-outline-danger w-100 mb-1">
+                                        <i data-lucide="shield-alert"></i> NVD Full Details
+                                    </a>
+                                    <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name={{ vuln.cve }}" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="file-text"></i> MITRE CVE Official
+                                    </a>
+                                    <a href="https://www.cvedetails.com/cve/{{ vuln.cve }}/" target="_blank" class="btn btn-sm btn-outline-info w-100 mb-2">
+                                        <i data-lucide="bar-chart"></i> CVE Stats
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Solo mostrar recursos adicionales si tiene CVE o es una vulnerabilidad real -->
+                                    {% if vuln.cve or vuln.severity in ['critical', 'high', 'medium'] %}
+                                    <!-- Detección Inteligente del Tipo de Vulnerabilidad -->
+                                    {% set vuln_lower = vuln.name | lower %}
+                                    {% set is_ssh = 'ssh' in vuln_lower or 'openssh' in vuln_lower or 'terrapin' in vuln_lower %}
+                                    {% set is_xss = 'xss' in vuln_lower or 'cross-site scripting' in vuln_lower %}
+                                    {% set is_sqli = 'sql' in vuln_lower and 'injection' in vuln_lower %}
+                                    {% set is_csrf = 'csrf' in vuln_lower or 'cross-site request' in vuln_lower %}
+                                    {% set is_rce = 'rce' in vuln_lower or 'remote code execution' in vuln_lower or 'command injection' in vuln_lower %}
+                                    {% set is_lfi = 'lfi' in vuln_lower or 'local file inclusion' in vuln_lower or 'path traversal' in vuln_lower %}
+
+                                    <!-- Links Específicos por Tipo -->
+                                    <p class="small text-muted mb-1"><strong>📚 Recursos y Advisories:</strong></p>
+
+                                    <!-- Vendor Security Advisories (Most Useful) -->
+                                    <a href="https://www.google.com/search?q={{ vuln.name | urlencode }}+site:pentest-tools.com+OR+site:fortiguard.com+OR+site:security.nl" target="_blank" class="btn btn-sm btn-outline-primary w-100 mb-1">
+                                        <i data-lucide="search"></i> Vendor Advisories
+                                    </a>
+
+                                    {% if is_xss %}
+                                    <!-- XSS Specific -->
+                                    <a href="https://owasp.org/www-community/attacks/xss/" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="shield"></i> OWASP XSS Guide
+                                    </a>
+                                    <a href="https://portswigger.net/web-security/cross-site-scripting" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
+                                        <i data-lucide="graduation-cap"></i> PortSwigger XSS Lab
+                                    </a>
+                                    {% elif is_sqli %}
+                                    <!-- SQL Injection Specific -->
+                                    <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="shield"></i> OWASP SQLi Guide
+                                    </a>
+                                    <a href="https://portswigger.net/web-security/sql-injection" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
+                                        <i data-lucide="graduation-cap"></i> PortSwigger SQLi Lab
+                                    </a>
+                                    {% elif is_csrf %}
+                                    <!-- CSRF Specific -->
+                                    <a href="https://owasp.org/www-community/attacks/csrf" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="shield"></i> OWASP CSRF Guide
+                                    </a>
+                                    {% elif is_rce %}
+                                    <!-- RCE Specific -->
+                                    <a href="https://owasp.org/www-community/attacks/Command_Injection" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="shield"></i> OWASP Command Injection
+                                    </a>
+                                    {% elif is_lfi %}
+                                    <!-- LFI/Path Traversal Specific -->
+                                    <a href="https://owasp.org/www-community/attacks/Path_Traversal" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
+                                        <i data-lucide="shield"></i> OWASP Path Traversal
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- PoC & Exploits -->
+                                    {% if vuln.cve %}
+                                    <a href="https://www.google.com/search?q={{ vuln.cve | urlencode }}+site:github.com+OR+site:exploit-db.com" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
+                                        <i data-lucide="code"></i> PoC & Exploits
+                                    </a>
+                                    {% else %}
+                                    <a href="https://www.google.com/search?q={{ vuln.name | urlencode }}+PoC+OR+exploit" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
+                                        <i data-lucide="code"></i> PoC & Exploits
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Remediation -->
+                                    <a href="https://www.google.com/search?q={{ vuln.name | urlencode }}+remediation+mitigation+patch" target="_blank" class="btn btn-sm btn-outline-success w-100 mb-1">
+                                        <i data-lucide="tool"></i> Remediación
+                                    </a>
+
+                                    {% if 'Remediación:' in (vuln.description or '') %}
+                                    <hr class="my-2">
+                                    <small class="text-success fw-bold"><i data-lucide="shield-check"></i> Remediación sugerida en Descripción</small>
+                                    {% endif %}
+
+                                    {% endif %} <!-- Cierre del if para mostrar recursos solo si tiene CVE o es vuln real -->
+
+                                    {% if not vuln.cve and vuln.severity == 'info' %}
+                                    <!-- Para vulnerabilidades informativas sin CVE, mostrar mensaje -->
+                                    <div class="alert alert-info mt-2">
+                                        <small><i data-lucide="info"></i> Esta es una detección informativa. No hay referencias externas disponibles.</small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-success">
+            <i data-lucide="shield-check"></i> No se encontraron vulnerabilidades.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Info de Red LAN (solo para escaneos LAN) -->
+    {% if is_lan_scan %}
+    <div class="tab-pane fade" id="lan-info" role="tabpanel">
+        <h5 class="mb-3"><i data-lucide="wifi"></i> Información de Red</h5>
+
+        <!-- Hosts Detectados -->
+        <div class="card mb-3">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i data-lucide="monitor"></i> Hosts Detectados</h6>
+            </div>
+            <div class="card-body">
+                {% if lan_info and lan_info.hosts %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>IP</th>
+                                <th>Estado</th>
+                                <th>Puertos Abiertos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for host_ip in lan_info.hosts %}
+                            <tr>
+                                <td><code class="text-primary">{{ host_ip }}</code></td>
+                                <td><span class="badge bg-success">Activo</span></td>
+                                <td>
+                                    {% set host_services = services|selectattr('ip', 'equalto', host_ip)|list %}
+                                    {{ host_services|length }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i data-lucide="info"></i> Se escaneó el host {{ scan.target }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Detalle de OS y Scripts por Host -->
+        {% if raw_results and raw_results.ports %}
+        {% for ip, port_data in raw_results.ports.items() %}
+        {% if port_data.hosts %}
+        {% for host in port_data.hosts %}
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i data-lucide="cpu"></i> {{ ip }}
+                    {% if host.os and host.os.name %}
+                    - {{ host.os.name }} ({{ host.os.accuracy }}% confianza)
+                    {% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if host.os and host.os.name %}
+                <div class="mb-3">
+                    <strong>Sistema Operativo:</strong>
+                    <span class="badge bg-info fs-6">{{ host.os.name }}</span>
+                    {% if host.os.osfamily %}
+                    <span class="badge bg-secondary">{{ host.os.osfamily }} {{ host.os.osgen }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if host.scripts %}
+                <div class="mb-3">
+                    <strong>Resultados de Scripts NSE:</strong>
+                    {% for script in host.scripts %}
+                    <div class="card mt-2">
+                        <div class="card-header py-1 px-2">
+                            <small class="fw-bold text-primary">{{ script.id }}</small>
+                        </div>
+                        <div class="card-body py-2 px-2">
+                            <pre class="mb-0 small" style="white-space: pre-wrap;">{{ script.output }}</pre>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if host.hostnames %}
+                <div class="mb-2">
+                    <strong>Hostnames:</strong>
+                    {% for hostname in host.hostnames %}
+                    <span class="badge bg-info">{{ hostname }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        <!-- Resumen de Seguridad LAN -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i data-lucide="shield"></i> Resumen de Seguridad</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4>{{ services|length }}</h4>
+                            <small class="text-muted">Servicios Expuestos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-danger">{{ vulnerabilities|selectattr('severity', 'equalto', 'critical')|list|length + vulnerabilities|selectattr('severity', 'equalto', 'high')|list|length }}</h4>
+                            <small class="text-muted">Vulns Criticas/Altas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4>{{ lan_info.open_ports if lan_info else 0 }}</h4>
+                            <small class="text-muted">Puertos Abiertos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Grafo Interactivo -->
+    <div class="tab-pane fade" id="graph" role="tabpanel">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5><i data-lucide="network"></i> Mapa de Relaciones</h5>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="resetGraph()">
+                            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Reset
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fitGraph()">
+                            <i data-lucide="maximize-2" style="width:14px;height:14px;"></i> Ajustar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportGraphImage()">
+                            <i data-lucide="download" style="width:14px;height:14px;"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label class="form-label small">Mostrar:</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filterSubdomains" checked onchange="updateGraphFilters()">
+                    <label class="form-check-label" for="filterSubdomains">
+                        Subdominios
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filterIPs" checked onchange="updateGraphFilters()">
+                    <label class="form-check-label" for="filterIPs">
+                        IPs
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">&nbsp;</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filterPorts" checked onchange="updateGraphFilters()">
+                    <label class="form-check-label" for="filterPorts">
+                        Puertos
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filterServices" checked onchange="updateGraphFilters()">
+                    <label class="form-check-label" for="filterServices">
+                        Servicios
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">&nbsp;</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="filterVulns" checked onchange="updateGraphFilters()">
+                    <label class="form-check-label" for="filterVulns">
+                        Vulnerabilidades
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Buscar nodo:</label>
+                <input type="text" class="form-control form-control-sm" id="searchNode" placeholder="Buscar..." onkeyup="searchGraphNode()">
+            </div>
+        </div>
+
+        <!-- Estadísticas del Grafo -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="alert alert-info" id="graphStats">
+                    <strong>Cargando grafo...</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor del Grafo -->
+        <div id="cy" style="width: 100%; height: 600px; border: 1px solid #dee2e6; background: #fafafa;"></div>
+    </div>
+
+    <!-- JSON Raw -->
+    <div class="tab-pane fade" id="raw" role="tabpanel">
+        {% if raw_results %}
+        <pre><code>{{ raw_results|tojson(indent=2) }}</code></pre>
+        {% else %}
+        <div class="alert alert-info">
+            <i data-lucide="info"></i> No hay resultados raw disponibles.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Inicializar DataTables
+$(document).ready(function() {
+    $('#subdomainsTable').DataTable({
+        pageLength: 25,
+        order: [[0, 'asc']]
+    });
+    
+    $('#urlsTable').DataTable({
+        pageLength: 25,
+        order: [[0, 'asc']]
+    });
+    
+    // Tabla de servicios con búsqueda rápida
+    var servicesTable = $('#servicesTable').DataTable({
+        pageLength: 25,
+        order: [[1, 'asc']],  // Ordenar por puerto ascendente
+        scrollX: false,
+        autoWidth: false,
+        columnDefs: [
+            {
+                targets: 1,  // Columna de puerto
+                type: 'num'  // Tratar como número para ordenar correctamente
+            }
+        ]
+    });
+
+    // Agregar búsqueda por columna en el header (segunda fila)
+    $('#servicesTable thead tr:eq(1) input').on('keyup change', function () {
+        var columnIndex = $(this).parent().index();
+        servicesTable.column(columnIndex).search(this.value).draw();
+    });
+    
+    // Filtros de vulnerabilidades
+    $('#severityFilter').on('change', filterVulnerabilities);
+    $('#hideInfo').on('change', filterVulnerabilities);
+
+    // Aplicar filtro inicial (ocultar info)
+    filterVulnerabilities();
+
+    // Inicializar iconos de Lucide
+    setTimeout(function() {
+        lucide.createIcons();
+    }, 100);
+});
+
+function toggleVulnDetails(index) {
+    $('#vulnDetails' + index).toggle();
+}
+
+function filterVulnerabilities() {
+    const severityFilter = $('#severityFilter').val().toLowerCase();
+    const hideInfo = $('#hideInfo').is(':checked');
+    let shown = 0;
+    let total = 0;
+    let realVulns = 0;
+
+    console.log('Filtering - severity:', severityFilter, 'hideInfo:', hideInfo);
+
+    $('.vuln-row').each(function() {
+        const $row = $(this);
+        const severity = $row.data('severity');
+        const isInfoOnly = String($row.data('info-only')) === 'true';
+        const detailsRow = $row.next('.vuln-details');
+
+        total++;
+
+        // Contar solo vulnerabilidades reales (no info)
+        if (!isInfoOnly && severity !== 'info') {
+            realVulns++;
+        }
+
+        let show = true;
+
+        // Filtro de severidad
+        if (severityFilter && severity !== severityFilter) {
+            show = false;
+        }
+
+        // Filtro de información (ocultar detecciones informativas)
+        if (hideInfo && isInfoOnly) {
+            show = false;
+            console.log('Hiding:', $row.find('strong').text());
+        }
+
+        if (show) {
+            $row.show();
+            detailsRow.show();
+            shown++;
+        } else {
+            $row.hide();
+            detailsRow.hide();
+        }
+    });
+
+    // Actualizar contador
+    $('#vulnShown').text(shown + ' / ' + total + ' (' + realVulns + ' reales)');
+    console.log('Shown:', shown, 'Total:', total, 'Real:', realVulns);
+}
+
+// Función para eliminar escaneo
+function deleteScan(scanId) {
+    if (!confirm('¿Estás seguro de eliminar este escaneo?\n\nEsta acción no se puede deshacer y eliminará:\n- El registro del escaneo\n- Todos los subdominios encontrados\n- Todos los servicios detectados\n- Todas las vulnerabilidades\n- Los resultados raw\n\n¿Continuar?')) {
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    const originalContent = event.target.innerHTML;
+    event.target.innerHTML = '<i data-lucide="loader" class="spin"></i> Eliminando...';
+    event.target.disabled = true;
+    
+    fetch(`/api/scan/${scanId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            alert('✓ Escaneo eliminado correctamente');
+            // Redirigir a la página de resultados
+            window.location.href = '/results';
+        } else {
+            alert('✗ Error: ' + (data.error || 'No se pudo eliminar el escaneo'));
+            event.target.innerHTML = originalContent;
+            event.target.disabled = false;
+            // Re-inicializar iconos de Lucide
+            lucide.createIcons();
+        }
+    })
+    .catch(error => {
+        alert('✗ Error al eliminar: ' + error);
+        event.target.innerHTML = originalContent;
+        event.target.disabled = false;
+        // Re-inicializar iconos de Lucide
+        lucide.createIcons();
+    });
+}
+
+// Función para cargar datos de NVD
+function loadNVDData(cveId, index, buttonElement) {
+    const container = $(`#nvdData${index}`);
+    const button = buttonElement;
+    const originalHTML = button.innerHTML;
+
+    // Mostrar loading
+    button.innerHTML = '<i data-lucide="loader" class="spin"></i> Cargando...';
+    button.disabled = true;
+
+    // Llamar a la API
+    fetch(`/api/vuln/enrich/${cveId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const enriched = data.data;
+
+                // Construir HTML con datos enriquecidos
+                let html = '';
+
+                // CVSS Score
+                if (enriched.cvss && enriched.cvss.score) {
+                    const cvss = enriched.cvss;
+                    let severityClass = 'secondary';
+                    if (cvss.score >= 9.0) severityClass = 'danger';
+                    else if (cvss.score >= 7.0) severityClass = 'warning';
+                    else if (cvss.score >= 4.0) severityClass = 'info';
+                    else severityClass = 'success';
+
+                    html += `
+                        <div class="alert alert-${severityClass} mb-2">
+                            <strong>CVSS ${cvss.version}:</strong> ${cvss.score} (${cvss.severity})
+                            <br><small class="font-monospace">${cvss.vector}</small>
+                        </div>
+                    `;
+                }
+
+                // Descripción oficial
+                if (enriched.description) {
+                    html += `
+                        <p><strong>Descripción Oficial (NVD):</strong></p>
+                        <p class="small">${enriched.description}</p>
+                    `;
+                }
+
+                // Referencias útiles
+                if (enriched.references && enriched.references.length > 0) {
+                    html += '<p class="mb-1"><strong>Referencias Útiles:</strong></p>';
+                    html += '<div class="list-group list-group-flush mb-2">';
+
+                    enriched.references.slice(0, 5).forEach(ref => {
+                        let badge = '';
+                        if (ref.tags.includes('Exploit')) badge = '<span class="badge bg-danger ms-2">Exploit</span>';
+                        else if (ref.tags.includes('Patch')) badge = '<span class="badge bg-success ms-2">Patch</span>';
+                        else if (ref.url.includes('github.com')) badge = '<span class="badge bg-dark ms-2">GitHub</span>';
+                        else if (ref.url.includes('fortiguard')) badge = '<span class="badge bg-primary ms-2">Fortiguard</span>';
+
+                        const domain = new URL(ref.url).hostname.replace('www.', '');
+                        html += `
+                            <a href="${ref.url}" target="_blank" class="list-group-item list-group-item-action small">
+                                <i data-lucide="external-link" style="width:12px;height:12px;"></i> ${domain}${badge}
+                            </a>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                // Fechas
+                if (enriched.published) {
+                    const pubDate = new Date(enriched.published).toLocaleDateString();
+                    html += `<small class="text-muted">Publicado: ${pubDate}</small>`;
+                }
+
+                // Mostrar datos
+                container.find('.nvd-content').html(html);
+                container.slideDown();
+
+                // Re-inicializar iconos de Lucide
+                lucide.createIcons();
+
+                // Ocultar botón
+                button.style.display = 'none';
+            } else {
+                alert('No se pudieron cargar los datos de NVD. Intenta más tarde.');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar datos de NVD: ' + error);
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+        });
+}
+
+// SocketIO para actualizar progreso en tiempo real
+{% if scan.status == 'running' %}
+const socket = io();
+
+socket.on('connect', function() {
+    console.log('SocketIO conectado en scan_detail');
+});
+
+socket.on('scan_progress', function(data) {
+    // Solo actualizar si es el escaneo actual
+    if (data.scan_id !== '{{ scan.scan_id }}') {
+        return;
+    }
+
+    console.log('Progress update:', data);
+
+    // Actualizar fase
+    const phaseElement = document.getElementById('progressPhase');
+    if (phaseElement) {
+        phaseElement.textContent = data.phase;
+    }
+
+    // Actualizar porcentaje
+    const percent = data.percent;
+    const percentElement = document.getElementById('progressPercent');
+    if (percentElement) {
+        percentElement.textContent = percent + '%';
+    }
+
+    const progressBar = document.getElementById('progressBar');
+    if (progressBar) {
+        progressBar.style.width = percent + '%';
+        progressBar.setAttribute('aria-valuenow', percent);
+        progressBar.textContent = percent + '%';
+
+        // Cambiar color según progreso
+        progressBar.classList.remove('bg-success', 'bg-info', 'bg-warning');
+        if (percent < 30) {
+            progressBar.classList.add('bg-info');
+        } else if (percent < 70) {
+            progressBar.classList.add('bg-warning');
+        } else {
+            progressBar.classList.add('bg-success');
+        }
+    }
+
+    // Actualizar mensaje
+    const messageElement = document.getElementById('progressMessage');
+    if (messageElement) {
+        messageElement.textContent = data.message;
+    }
+});
+
+socket.on('scan_completed', function(data) {
+    // Solo recargar si es el escaneo actual
+    if (data.scan_id === '{{ scan.scan_id }}') {
+        console.log('Scan completed, reloading page...');
+        setTimeout(function() {
+            location.reload();
+        }, 2000);
+    }
+});
+
+socket.on('disconnect', function() {
+    console.log('SocketIO desconectado');
+});
+{% endif %}
+
+// ========== VISUALIZACIÓN DE GRAFO INTERACTIVO ==========
+
+// Cargar Cytoscape.js desde CDN
+const cytoscapeScript = document.createElement('script');
+cytoscapeScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js';
+cytoscapeScript.onload = function() {
+    console.log('[Graph] Cytoscape.js cargado');
+
+    // Cargar grafo cuando se hace clic en el tab
+    document.getElementById('graph-tab').addEventListener('click', function() {
+        if (!window.cytoscapeInstance) {
+            loadAndRenderGraph();
+        }
+    });
+};
+document.head.appendChild(cytoscapeScript);
+
+let cytoscapeInstance = null;
+let graphData = null;
+
+async function loadAndRenderGraph() {
+    try {
+        const scanId = '{{ scan.scan_id }}';
+        const response = await fetch(`/api/scan/${scanId}/graph`);
+        const data = await response.json();
+
+        if (!data.success) {
+            document.getElementById('graphStats').innerHTML = '<strong class="text-danger">Error al cargar el grafo</strong>';
+            return;
+        }
+
+        graphData = data;
+
+        // Para LAN: ocultar filtro de subdominios (no aplica)
+        if (data.is_lan) {
+            const subFilter = document.getElementById('filterSubdomains');
+            if (subFilter) subFilter.closest('.form-check').style.display = 'none';
+        }
+
+        // Estadísticas adaptadas al tipo de escaneo
+        let statsHtml = '<strong>Mapa de red:</strong> ';
+        if (data.is_lan) {
+            statsHtml += `${data.stats.ips} host(s) | ${data.stats.ports} puertos | ${data.stats.services} servicios | `;
+            statsHtml += `<span class="text-danger fw-bold">${data.stats.vulnerabilities} vulnerabilidades</span>`;
+        } else {
+            statsHtml += `${data.stats.total_nodes} nodos | ${data.stats.subdomains} subdominios | ${data.stats.ips} IPs | ${data.stats.ports} puertos | ${data.stats.vulnerabilities} vulns`;
+        }
+        document.getElementById('graphStats').innerHTML = statsHtml;
+
+        // Renderizar grafo
+        renderCytoscapeGraph(data.elements, data.is_lan);
+
+    } catch (error) {
+        console.error('[Graph] Error:', error);
+        document.getElementById('graphStats').innerHTML = '<strong class="text-danger">Error al cargar el grafo</strong>';
+    }
+}
+
+function renderCytoscapeGraph(elements, isLan) {
+    const container = document.getElementById('cy');
+
+    if (!container) {
+        console.error('[Graph] Container not found');
+        return;
+    }
+
+    // Configuración de estilos por tipo de nodo
+    const nodeStyles = {
+        'target': { color: '#e74c3c', shape: 'star', size: 60 },
+        'subdomain': { color: '#3498db', shape: 'ellipse', size: 40 },
+        'ip': { color: '#9b59b6', shape: 'rectangle', size: 35 },
+        'port': { color: '#f39c12', shape: 'diamond', size: 25 },
+        'service': { color: '#2ecc71', shape: 'roundrectangle', size: 30 },
+        'vulnerability': { color: '#e74c3c', shape: 'hexagon', size: 35 }
+    };
+
+    // Inicializar Cytoscape
+    cytoscapeInstance = cytoscape({
+        container: container,
+        elements: elements,
+
+        style: [
+            // Estilos de nodos
+            {
+                selector: 'node',
+                style: {
+                    'label': 'data(label)',
+                    'text-valign': 'center',
+                    'text-halign': 'center',
+                    'font-size': '10px',
+                    'color': '#333',
+                    'text-outline-color': '#fff',
+                    'text-outline-width': 2,
+                    'background-color': '#999',
+                    'width': 'data(size)',
+                    'height': 'data(size)'
+                }
+            },
+
+            // Nodo Target (raíz)
+            {
+                selector: 'node[type="target"]',
+                style: {
+                    'background-color': nodeStyles.target.color,
+                    'shape': nodeStyles.target.shape,
+                    'font-size': '14px',
+                    'font-weight': 'bold'
+                }
+            },
+
+            // Subdominios
+            {
+                selector: 'node[type="subdomain"]',
+                style: {
+                    'background-color': nodeStyles.subdomain.color,
+                    'shape': nodeStyles.subdomain.shape
+                }
+            },
+
+            // IPs
+            {
+                selector: 'node[type="ip"]',
+                style: {
+                    'background-color': nodeStyles.ip.color,
+                    'shape': nodeStyles.ip.shape
+                }
+            },
+
+            // Puertos
+            {
+                selector: 'node[type="port"]',
+                style: {
+                    'background-color': nodeStyles.port.color,
+                    'shape': nodeStyles.port.shape,
+                    'font-size': '8px'
+                }
+            },
+
+            // Servicios
+            {
+                selector: 'node[type="service"]',
+                style: {
+                    'background-color': nodeStyles.service.color,
+                    'shape': nodeStyles.service.shape,
+                    'font-size': '9px'
+                }
+            },
+
+            // Vulnerabilidades - por severidad
+            {
+                selector: 'node[type="vulnerability"][severity="critical"]',
+                style: {
+                    'background-color': '#c0392b',
+                    'shape': nodeStyles.vulnerability.shape,
+                    'width': 40,
+                    'height': 40
+                }
+            },
+            {
+                selector: 'node[type="vulnerability"][severity="high"]',
+                style: {
+                    'background-color': '#e74c3c',
+                    'shape': nodeStyles.vulnerability.shape,
+                    'width': 35,
+                    'height': 35
+                }
+            },
+            {
+                selector: 'node[type="vulnerability"][severity="medium"]',
+                style: {
+                    'background-color': '#f39c12',
+                    'shape': nodeStyles.vulnerability.shape
+                }
+            },
+            {
+                selector: 'node[type="vulnerability"][severity="low"]',
+                style: {
+                    'background-color': '#f1c40f',
+                    'shape': nodeStyles.vulnerability.shape,
+                    'width': 25,
+                    'height': 25
+                }
+            },
+            {
+                selector: 'node[type="vulnerability"][severity="info"]',
+                style: {
+                    'background-color': '#95a5a6',
+                    'shape': nodeStyles.vulnerability.shape,
+                    'width': 20,
+                    'height': 20
+                }
+            },
+
+            // Subdominios activos
+            {
+                selector: 'node[type="subdomain"][is_alive=true]',
+                style: {
+                    'border-width': 3,
+                    'border-color': '#27ae60'
+                }
+            },
+
+            // Estilos de aristas
+            {
+                selector: 'edge',
+                style: {
+                    'width': 2,
+                    'line-color': '#bdc3c7',
+                    'target-arrow-color': '#bdc3c7',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier',
+                    'arrow-scale': 1.2
+                }
+            },
+
+            // Aristas de vulnerabilidades críticas
+            {
+                selector: 'edge[severity="critical"]',
+                style: {
+                    'line-color': '#c0392b',
+                    'target-arrow-color': '#c0392b',
+                    'width': 3
+                }
+            },
+            {
+                selector: 'edge[severity="high"]',
+                style: {
+                    'line-color': '#e74c3c',
+                    'target-arrow-color': '#e74c3c',
+                    'width': 2.5
+                }
+            },
+
+            // Nodos seleccionados
+            {
+                selector: ':selected',
+                style: {
+                    'background-color': '#3498db',
+                    'border-width': 4,
+                    'border-color': '#2980b9'
+                }
+            }
+        ],
+
+        layout: isLan ? {
+            // Para LAN: layout jerárquico breadthfirst (árbol claro)
+            name: 'breadthfirst',
+            directed: true,
+            animate: true,
+            animationDuration: 800,
+            spacingFactor: 1.4,
+            padding: 30,
+            roots: elements.nodes
+                .filter(n => n.data.type === 'target')
+                .map(n => '#' + n.data.id)
+        } : {
+            // Para domain scans: layout COSE (fuerza)
+            name: 'cose',
+            animate: true,
+            animationDuration: 1000,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 100,
+            edgeElasticity: 100,
+            nestingFactor: 5,
+            gravity: 80,
+            numIter: 1000,
+            initialTemp: 200,
+            coolingFactor: 0.95,
+            minTemp: 1.0
+        }
+    });
+
+    // Eventos de interacción
+    cytoscapeInstance.on('tap', 'node', function(evt) {
+        const node = evt.target;
+        const data = node.data();
+
+        console.log('[Graph] Nodo seleccionado:', data);
+
+        // Mostrar info del nodo
+        let info = `<strong>${data.label}</strong><br>Tipo: ${data.type}`;
+
+        if (data.type === 'vulnerability' && data.severity) {
+            info += `<br>Severidad: ${data.severity.toUpperCase()}`;
+        }
+        if (data.type === 'service' && data.product) {
+            info += `<br>Producto: ${data.product}`;
+            if (data.version) {
+                info += ` ${data.version}`;
+            }
+        }
+        if (data.type === 'subdomain' && data.http_status) {
+            info += `<br>HTTP Status: ${data.http_status}`;
+        }
+
+        // Actualizar estadísticas con info del nodo
+        document.getElementById('graphStats').innerHTML = info;
+    });
+
+    console.log('[Graph] Grafo renderizado con', elements.nodes.length, 'nodos');
+}
+
+function resetGraph() {
+    if (cytoscapeInstance) {
+        const isLan = graphData && graphData.is_lan;
+        cytoscapeInstance.layout(isLan ? {
+            name: 'breadthfirst',
+            directed: true,
+            animate: true,
+            spacingFactor: 1.4,
+            padding: 30
+        } : {
+            name: 'cose',
+            animate: true,
+            animationDuration: 1000,
+            nodeRepulsion: 8000,
+            idealEdgeLength: 100
+        }).run();
+    }
+}
+
+function fitGraph() {
+    if (cytoscapeInstance) {
+        cytoscapeInstance.fit();
+    }
+}
+
+function exportGraphImage() {
+    if (cytoscapeInstance) {
+        const png64 = cytoscapeInstance.png({ scale: 2 });
+        const link = document.createElement('a');
+        link.href = png64;
+        link.download = 'farosint_graph_{{ scan.scan_id }}.png';
+        link.click();
+    }
+}
+
+function updateGraphFilters() {
+    if (!cytoscapeInstance) return;
+
+    const filters = {
+        subdomains: document.getElementById('filterSubdomains').checked,
+        ips: document.getElementById('filterIPs').checked,
+        ports: document.getElementById('filterPorts').checked,
+        services: document.getElementById('filterServices').checked,
+        vulns: document.getElementById('filterVulns').checked
+    };
+
+    // Mostrar/ocultar nodos según filtros
+    cytoscapeInstance.nodes().forEach(node => {
+        const type = node.data('type');
+        let show = true;
+
+        if (type === 'subdomain' && !filters.subdomains) show = false;
+        if (type === 'ip' && !filters.ips) show = false;
+        if (type === 'port' && !filters.ports) show = false;
+        if (type === 'service' && !filters.services) show = false;
+        if (type === 'vulnerability' && !filters.vulns) show = false;
+
+        if (show) {
+            node.style('display', 'element');
+        } else {
+            node.style('display', 'none');
+        }
+    });
+
+    // Ocultar aristas conectadas a nodos ocultos
+    cytoscapeInstance.edges().forEach(edge => {
+        const source = edge.source();
+        const target = edge.target();
+
+        if (source.style('display') === 'none' || target.style('display') === 'none') {
+            edge.style('display', 'none');
+        } else {
+            edge.style('display', 'element');
+        }
+    });
+}
+
+function searchGraphNode() {
+    if (!cytoscapeInstance) return;
+
+    const searchTerm = document.getElementById('searchNode').value.toLowerCase();
+
+    if (!searchTerm) {
+        // Restaurar todos los nodos
+        cytoscapeInstance.nodes().forEach(node => {
+            node.style('opacity', 1);
+            node.unselect();
+        });
+        cytoscapeInstance.edges().style('opacity', 1);
+        return;
+    }
+
+    // Atenuar todos los nodos
+    cytoscapeInstance.nodes().forEach(node => {
+        const label = node.data('label').toLowerCase();
+        if (label.includes(searchTerm)) {
+            node.style('opacity', 1);
+            node.select();
+        } else {
+            node.style('opacity', 0.2);
+            node.unselect();
+        }
+    });
+
+    // Atenuar aristas
+    cytoscapeInstance.edges().forEach(edge => {
+        if (edge.source().selected() || edge.target().selected()) {
+            edge.style('opacity', 1);
+        } else {
+            edge.style('opacity', 0.1);
+        }
+    });
+}
+</script>
+{% endblock %}

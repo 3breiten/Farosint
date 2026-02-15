@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FAROSINT Cyber{% endblock %}
+
+{% block extra_css %}
+<style>
+/* PROPUESTA 1: DARK CYBER - Estilo cyberpunk/hacker */
+
+/* Modo Oscuro (por defecto) */
+body.dark-mode {
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+    color: #00ff41;
+}
+
+/* Modo Claro - Cyber Light */
+body.light-mode {
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+    color: #1b5e20;
+}
+
+/* Dark Mode - Cyber Cards */
+body.dark-mode .cyber-card {
+    background: rgba(15, 15, 35, 0.9);
+    border: 1px solid #00ff41;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+    transition: all 0.3s ease;
+}
+
+body.dark-mode .cyber-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+    border-color: #00ffff;
+}
+
+body.dark-mode .stat-card {
+    background: linear-gradient(135deg, rgba(0, 255, 65, 0.1) 0%, rgba(0, 255, 255, 0.1) 100%);
+    border: 2px solid transparent;
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+/* Light Mode - Cyber Cards */
+body.light-mode .cyber-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #2e7d32;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+    transition: all 0.3s ease;
+}
+
+body.light-mode .cyber-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(46, 125, 50, 0.3);
+    border-color: #1b5e20;
+}
+
+body.light-mode .stat-card {
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(27, 94, 32, 0.1) 100%);
+    border: 2px solid transparent;
+    border-radius: 15px;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    transition: 0.5s;
+}
+
+body.dark-mode .stat-card::before {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.2), transparent);
+}
+
+body.light-mode .stat-card::before {
+    background: linear-gradient(90deg, transparent, rgba(46, 125, 50, 0.2), transparent);
+}
+
+.stat-card:hover::before {
+    left: 100%;
+}
+
+/* Dark Mode Colors */
+body.dark-mode .stat-card.primary { border-color: #00ff41; }
+body.dark-mode .stat-card.success { border-color: #00ffff; }
+body.dark-mode .stat-card.warning { border-color: #ffff00; }
+body.dark-mode .stat-card.danger { border-color: #ff0055; }
+body.dark-mode .stat-card.info { border-color: #00aaff; }
+
+/* Light Mode Colors */
+body.light-mode .stat-card.primary { border-color: #2e7d32; }
+body.light-mode .stat-card.success { border-color: #00897b; }
+body.light-mode .stat-card.warning { border-color: #f57c00; }
+body.light-mode .stat-card.danger { border-color: #c62828; }
+body.light-mode .stat-card.info { border-color: #1976d2; }
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: bold;
+    text-shadow: 0 0 10px currentColor;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+/* Dark Mode - Terminal */
+body.dark-mode .terminal-box {
+    background: #000;
+    border: 2px solid #00ff41;
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    color: #00ff41;
+    box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+}
+
+body.dark-mode .terminal-header {
+    background: #1a1a2e;
+    padding: 10px 15px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #00ff41;
+    margin: -20px -20px 15px -20px;
+}
+
+/* Light Mode - Terminal */
+body.light-mode .terminal-box {
+    background: #ffffff;
+    border: 2px solid #2e7d32;
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    color: #1b5e20;
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.15);
+}
+
+body.light-mode .terminal-header {
+    background: #e8f5e9;
+    padding: 10px 15px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid #2e7d32;
+    margin: -20px -20px 15px -20px;
+    color: #1b5e20;
+}
+
+.vuln-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.vuln-critical { background: #ff0055; color: #fff; box-shadow: 0 0 10px #ff0055; }
+.vuln-high { background: #ff5500; color: #fff; box-shadow: 0 0 10px #ff5500; }
+.vuln-medium { background: #ffaa00; color: #000; box-shadow: 0 0 10px #ffaa00; }
+.vuln-low { background: #00ff41; color: #000; box-shadow: 0 0 10px #00ff41; }
+
+/* Dark Mode - Scan Rows */
+body.dark-mode .scan-row {
+    background: rgba(15, 15, 35, 0.6);
+    border-left: 3px solid transparent;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+body.dark-mode .scan-row:hover {
+    background: rgba(0, 255, 65, 0.1);
+    border-left-color: #00ff41;
+    transform: translateX(5px);
+}
+
+/* Light Mode - Scan Rows */
+body.light-mode .scan-row {
+    background: rgba(232, 245, 233, 0.6);
+    border-left: 3px solid transparent;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+body.light-mode .scan-row:hover {
+    background: rgba(46, 125, 50, 0.1);
+    border-left-color: #2e7d32;
+    transform: translateX(5px);
+}
+
+body.light-mode .table-dark {
+    background-color: #e8f5e9 !important;
+    color: #1b5e20 !important;
+}
+
+body.light-mode .table-dark th {
+    background-color: #c8e6c9 !important;
+    color: #1b5e20 !important;
+    border-bottom: 2px solid #2e7d32 !important;
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.glitch {
+    position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.glitch::before {
+    left: 2px;
+    text-shadow: -2px 0 #ff00de;
+    animation: glitch-anim 2s infinite linear alternate-reverse;
+}
+
+.glitch::after {
+    left: -2px;
+    text-shadow: -2px 0 #00ffff;
+    animation: glitch-anim 3s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+    0% { clip-path: polygon(0 0, 100% 0, 100% 5%, 0 5%); }
+    10% { clip-path: polygon(0 15%, 100% 15%, 100% 20%, 0 20%); }
+    20% { clip-path: polygon(0 40%, 100% 40%, 100% 45%, 0 45%); }
+    30% { clip-path: polygon(0 60%, 100% 60%, 100% 65%, 0 65%); }
+    40% { clip-path: polygon(0 75%, 100% 75%, 100% 80%, 0 80%); }
+    50% { clip-path: polygon(0 90%, 100% 90%, 100% 95%, 0 95%); }
+    100% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); }
+}
+
+/* Estilos para título y subtítulo */
+body.dark-mode .cyber-title {
+    color: #00ff41;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+body.light-mode .cyber-title {
+    color: #2e7d32;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+body.dark-mode .cyber-subtitle {
+    color: #00ffff;
+    letter-spacing: 3px;
+}
+
+body.light-mode .cyber-subtitle {
+    color: #1b5e20;
+    letter-spacing: 3px;
+}
+
+/* Colores de stats cards adaptables */
+body.dark-mode .stat-card .stat-number,
+body.dark-mode .stat-card .stat-label {
+    color: inherit;
+}
+
+body.light-mode .stat-card .stat-number,
+body.light-mode .stat-card .stat-label {
+    color: inherit;
+}
+
+body.dark-mode .stat-card.primary .stat-number,
+body.dark-mode .stat-card.primary .stat-label,
+body.dark-mode .stat-card.primary i {
+    color: #00ff41 !important;
+}
+
+body.light-mode .stat-card.primary .stat-number,
+body.light-mode .stat-card.primary .stat-label,
+body.light-mode .stat-card.primary i {
+    color: #2e7d32 !important;
+}
+
+body.dark-mode .stat-card.success .stat-number,
+body.dark-mode .stat-card.success .stat-label,
+body.dark-mode .stat-card.success i {
+    color: #00ffff !important;
+}
+
+body.light-mode .stat-card.success .stat-number,
+body.light-mode .stat-card.success .stat-label,
+body.light-mode .stat-card.success i {
+    color: #00897b !important;
+}
+
+body.dark-mode .stat-card.warning .stat-number,
+body.dark-mode .stat-card.warning .stat-label,
+body.dark-mode .stat-card.warning i {
+    color: #ffff00 !important;
+}
+
+body.light-mode .stat-card.warning .stat-number,
+body.light-mode .stat-card.warning .stat-label,
+body.light-mode .stat-card.warning i {
+    color: #f57c00 !important;
+}
+
+body.dark-mode .stat-card.danger .stat-number,
+body.dark-mode .stat-card.danger .stat-label,
+body.dark-mode .stat-card.danger i {
+    color: #ff0055 !important;
+}
+
+body.light-mode .stat-card.danger .stat-number,
+body.light-mode .stat-card.danger .stat-label,
+body.light-mode .stat-card.danger i {
+    color: #c62828 !important;
+}
+
+body.dark-mode .stat-card.info .stat-number,
+body.dark-mode .stat-card.info .stat-label,
+body.dark-mode .stat-card.info i {
+    color: #00aaff !important;
+}
+
+body.light-mode .stat-card.info .stat-number,
+body.light-mode .stat-card.info .stat-label,
+body.light-mode .stat-card.info i {
+    color: #1976d2 !important;
+}
+
+/* Vuln boxes - Dark Mode */
+.vuln-box {
+    border-radius: 10px;
+}
+
+body.dark-mode .vuln-box-critical {
+    background: rgba(255, 0, 85, 0.1);
+    color: #ff0055;
+}
+
+body.dark-mode .vuln-box-critical i,
+body.dark-mode .vuln-box-critical h2,
+body.dark-mode .vuln-box-critical small {
+    color: #ff0055;
+}
+
+body.dark-mode .vuln-box-high {
+    background: rgba(255, 85, 0, 0.1);
+    color: #ff5500;
+}
+
+body.dark-mode .vuln-box-high i,
+body.dark-mode .vuln-box-high h2,
+body.dark-mode .vuln-box-high small {
+    color: #ff5500;
+}
+
+body.dark-mode .vuln-box-medium {
+    background: rgba(255, 170, 0, 0.1);
+    color: #ffaa00;
+}
+
+body.dark-mode .vuln-box-medium i,
+body.dark-mode .vuln-box-medium h2,
+body.dark-mode .vuln-box-medium small {
+    color: #ffaa00;
+}
+
+body.dark-mode .vuln-box-low {
+    background: rgba(0, 255, 65, 0.1);
+    color: #00ff41;
+}
+
+body.dark-mode .vuln-box-low i,
+body.dark-mode .vuln-box-low h2,
+body.dark-mode .vuln-box-low small {
+    color: #00ff41;
+}
+
+/* Vuln boxes - Light Mode */
+body.light-mode .vuln-box-critical {
+    background: rgba(198, 40, 40, 0.1);
+    color: #c62828;
+}
+
+body.light-mode .vuln-box-critical i,
+body.light-mode .vuln-box-critical h2,
+body.light-mode .vuln-box-critical small {
+    color: #c62828;
+}
+
+body.light-mode .vuln-box-high {
+    background: rgba(245, 124, 0, 0.1);
+    color: #f57c00;
+}
+
+body.light-mode .vuln-box-high i,
+body.light-mode .vuln-box-high h2,
+body.light-mode .vuln-box-high small {
+    color: #f57c00;
+}
+
+body.light-mode .vuln-box-medium {
+    background: rgba(251, 192, 45, 0.1);
+    color: #fbc02d;
+}
+
+body.light-mode .vuln-box-medium i,
+body.light-mode .vuln-box-medium h2,
+body.light-mode .vuln-box-medium small {
+    color: #fbc02d;
+}
+
+body.light-mode .vuln-box-low {
+    background: rgba(46, 125, 50, 0.1);
+    color: #2e7d32;
+}
+
+body.light-mode .vuln-box-low i,
+body.light-mode .vuln-box-low h2,
+body.light-mode .vuln-box-low small {
+    color: #2e7d32;
+}
+
+/* Botones - Dark Mode */
+body.dark-mode .cyber-btn-new {
+    background: #00ff41;
+    color: #000;
+    font-weight: bold;
+}
+
+body.dark-mode .cyber-btn-init {
+    background: #00ff41;
+    color: #000;
+    font-weight: bold;
+}
+
+/* Botones - Light Mode */
+body.light-mode .cyber-btn-new {
+    background: #2e7d32;
+    color: #fff;
+    font-weight: bold;
+}
+
+body.light-mode .cyber-btn-init {
+    background: #2e7d32;
+    color: #fff;
+    font-weight: bold;
+}
+
+/* Tabla - Dark Mode */
+body.dark-mode .cyber-table {
+    color: #f8f9fa;
+}
+
+body.dark-mode .cyber-thead {
+    border-bottom: 2px solid #00ff41;
+    color: #00ff41;
+}
+
+body.dark-mode .cyber-thead th {
+    color: #00ff41;
+}
+
+body.dark-mode .cyber-id {
+    font-family: 'Courier New', monospace;
+    color: #00ffff;
+}
+
+body.dark-mode .cyber-target {
+    font-family: 'Courier New', monospace;
+    color: #00ff41;
+}
+
+body.dark-mode .cyber-badge {
+    background: #1a1a2e;
+    color: #00ffff;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+body.dark-mode .cyber-status-ok {
+    color: #00ff41;
+}
+
+body.dark-mode .cyber-status-running {
+    color: #ffff00;
+}
+
+body.dark-mode .cyber-status-fail {
+    color: #ff0055;
+}
+
+body.dark-mode .cyber-vulns {
+    color: #ff0055;
+    font-weight: bold;
+}
+
+body.dark-mode .cyber-time {
+    color: #00ffff;
+    font-size: 0.85rem;
+}
+
+body.dark-mode .cyber-action {
+    color: #00ff41;
+    cursor: pointer;
+}
+
+body.dark-mode .cyber-no-data {
+    color: #00ff41;
+}
+
+/* Tabla - Light Mode */
+body.light-mode .cyber-table {
+    color: #212529;
+}
+
+body.light-mode .cyber-thead {
+    border-bottom: 2px solid #2e7d32;
+    color: #2e7d32;
+}
+
+body.light-mode .cyber-thead th {
+    color: #2e7d32;
+}
+
+body.light-mode .cyber-id {
+    font-family: 'Courier New', monospace;
+    color: #00897b;
+}
+
+body.light-mode .cyber-target {
+    font-family: 'Courier New', monospace;
+    color: #2e7d32;
+}
+
+body.light-mode .cyber-badge {
+    background: #e8f5e9;
+    color: #1b5e20;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+body.light-mode .cyber-status-ok {
+    color: #2e7d32;
+}
+
+body.light-mode .cyber-status-running {
+    color: #f57c00;
+}
+
+body.light-mode .cyber-status-fail {
+    color: #c62828;
+}
+
+body.light-mode .cyber-vulns {
+    color: #c62828;
+    font-weight: bold;
+}
+
+body.light-mode .cyber-time {
+    color: #1976d2;
+    font-size: 0.85rem;
+}
+
+body.light-mode .cyber-action {
+    color: #2e7d32;
+    cursor: pointer;
+}
+
+body.light-mode .cyber-no-data {
+    color: #1b5e20;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header con efecto glitch -->
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <h1 class="display-3 glitch cyber-title" data-text="FAROSINT">
+            FAROSINT
+        </h1>
+        <p class="cyber-subtitle">PLATAFORMA AVANZADA DE INTELIGENCIA DE AMENAZAS</p>
+    </div>
+</div>
+
+<!-- Stats Cards - Cyber Style -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg">
+        <div class="stat-card primary text-center" onclick="scrollToScans()">
+            <i data-lucide="database" width="30" height="30" style="margin-bottom: 10px;"></i>
+            <div class="stat-number">{{ stats.total_scans }}</div>
+            <div class="stat-label">TOTAL ESCANEOS</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card success text-center" onclick="filterByStatus('completed')">
+            <i data-lucide="shield-check" width="30" height="30" style="margin-bottom: 10px;"></i>
+            <div class="stat-number">{{ stats.scans_by_status.get('completed', 0) }}</div>
+            <div class="stat-label">COMPLETADOS</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card warning text-center" onclick="filterByStatus('running')">
+            <i data-lucide="activity" width="30" height="30" class="pulse" style="margin-bottom: 10px;"></i>
+            <div class="stat-number">{{ stats.scans_by_status.get('running', 0) }}</div>
+            <div class="stat-label">EN EJECUCIÓN</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-lg">
+        <div class="stat-card danger text-center" onclick="filterByStatus('failed')">
+            <i data-lucide="alert-triangle" width="30" height="30" style="margin-bottom: 10px;"></i>
+            <div class="stat-number">{{ stats.scans_by_status.get('failed', 0) }}</div>
+            <div class="stat-label">FALLIDOS</div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg">
+        <div class="stat-card info text-center" onclick="goToLastScanVulns()">
+            <i data-lucide="bug" width="30" height="30" style="margin-bottom: 10px;"></i>
+            <div class="stat-number">{{ stats.total_vulnerabilities }}</div>
+            <div class="stat-label">VULNERABILIDADES</div>
+        </div>
+    </div>
+</div>
+
+<!-- Nivel de Amenaza y Escaneos Recientes -->
+<div class="row g-4 mb-4">
+    <!-- Gauge de Nivel de Amenaza -->
+    <div class="col-md-4">
+        <div class="terminal-box h-100">
+            <div class="terminal-header">
+                <strong>[ ANÁLISIS DE NIVEL DE AMENAZA ]</strong>
+            </div>
+            <div class="text-center py-4">
+                <canvas id="threatGauge" width="250" height="250"></canvas>
+                <div class="mt-3">
+                    {% if severity_stats.critical > 0 %}
+                    <span class="vuln-badge vuln-critical">ALERTA CRÍTICA</span>
+                    {% elif severity_stats.high > 0 %}
+                    <span class="vuln-badge vuln-high">RIESGO ALTO</span>
+                    {% elif severity_stats.medium > 0 %}
+                    <span class="vuln-badge vuln-medium">MODERADO</span>
+                    {% else %}
+                    <span class="vuln-badge vuln-low">SEGURO</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Desglose de Vulnerabilidades -->
+    <div class="col-md-8">
+        <div class="terminal-box h-100">
+            <div class="terminal-header">
+                <strong>[ DISTRIBUCIÓN DE VULNERABILIDADES ]</strong>
+            </div>
+            <div class="row g-3 p-3">
+                <div class="col-6">
+                    <div class="text-center p-3 vuln-box vuln-box-critical">
+                        <i data-lucide="skull" width="40" height="40"></i>
+                        <h2 class="mt-2">{{ severity_stats.critical }}</h2>
+                        <small>CRÍTICAS</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="text-center p-3 vuln-box vuln-box-high">
+                        <i data-lucide="alert-circle" width="40" height="40"></i>
+                        <h2 class="mt-2">{{ severity_stats.high }}</h2>
+                        <small>ALTAS</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="text-center p-3 vuln-box vuln-box-medium">
+                        <i data-lucide="alert-triangle" width="40" height="40"></i>
+                        <h2 class="mt-2">{{ severity_stats.medium }}</h2>
+                        <small>MEDIAS</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="text-center p-3 vuln-box vuln-box-low">
+                        <i data-lucide="info" width="40" height="40"></i>
+                        <h2 class="mt-2">{{ severity_stats.low }}</h2>
+                        <small>BAJAS</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terminal de Escaneos Recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="terminal-box">
+            <div class="terminal-header d-flex justify-content-between align-items-center">
+                <strong>[ OPERACIONES DE ESCANEO RECIENTES ]</strong>
+                <a href="/scan/new" class="btn btn-sm cyber-btn-new">
+                    + NUEVO ESCANEO
+                </a>
+            </div>
+
+            {% if recent_scans %}
+            <div class="table-responsive">
+                <table class="table cyber-table" style="margin: 0;">
+                    <thead class="cyber-thead">
+                        <tr>
+                            <th>ID</th>
+                            <th>OBJETIVO</th>
+                            <th>TIPO</th>
+                            <th>ESTADO</th>
+                            <th>VULNS</th>
+                            <th>HORA</th>
+                            <th>ACCIÓN</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for scan in recent_scans[:10] %}
+                        <tr class="scan-row" onclick="window.location.href='/scan/{{ scan.scan_id }}'">
+                            <td class="cyber-id">{{ loop.index }}</td>
+                            <td class="cyber-target">{{ scan.target }}</td>
+                            <td><span class="cyber-badge">{{ scan.scan_type }}</span></td>
+                            <td>
+                                {% if scan.status == 'completed' %}
+                                <span class="cyber-status-ok">✓ COMPLETO</span>
+                                {% elif scan.status == 'running' %}
+                                <span class="cyber-status-running pulse">◉ EN EJECUCIÓN</span>
+                                {% else %}
+                                <span class="cyber-status-fail">✗ FALLO</span>
+                                {% endif %}
+                            </td>
+                            <td class="cyber-vulns">{{ scan.total_vulnerabilities or 0 }}</td>
+                            <td class="cyber-time">{{ scan.start_time|datetime('%H:%M') }}</td>
+                            <td class="cyber-action">→ VER</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 cyber-no-data">
+                <i data-lucide="terminal" width="64" height="64"></i>
+                <p class="mt-3">NO SE ENCONTRARON OPERACIONES DE ESCANEO</p>
+                <a href="/scan/new" class="btn cyber-btn-init">
+                    INICIAR PRIMER ESCANEO
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funciones existentes (reutilizar del index.html original)
+function scrollToScans() {
+    document.querySelector('.terminal-box').scrollIntoView({ behavior: 'smooth' });
+}
+
+function filterByStatus(status) {
+    alert('Filtrar por: ' + status);
+}
+
+function goToLastScanVulns() {
+    {% if recent_scans %}
+    window.location.href = '/scan/{{ recent_scans[0].scan_id }}#vulnerabilities';
+    {% endif %}
+}
+
+// Actualizar íconos Lucide
+lucide.createIcons();
+</script>
+{% endblock %}
