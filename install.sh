@@ -77,6 +77,14 @@ check_debian() {
 check_root
 check_debian
 
+# Pre-requisito: instalar git si no está (Debian mínimo no lo trae)
+if ! command -v git &>/dev/null; then
+    echo -e "${YELLOW}  git no encontrado, instalando...${NC}"
+    apt-get update -qq
+    apt-get install -y -qq git > /dev/null 2>&1
+    echo -e "${GREEN}  ✓ git instalado${NC}"
+fi
+
 log_step "FAROSINT - Instalador Completo para Debian 12"
 echo "Este script instalará:"
 echo "  - Entorno gráfico (Openbox + LightDM + tint2)"
