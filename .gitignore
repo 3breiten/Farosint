@@ -54,3 +54,6 @@ tools/
 !system/
 !install.sh
 !requirements.txt
+
+# Node modules (if any)
+node_modules/
