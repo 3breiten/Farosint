@@ -10,7 +10,7 @@ Built for security professionals, pentesters, and red team operators.
 
 ## Features
 
-- **Multi-mode scanning**: Quick, Full/Advanced, and LAN scanning modes
+- **Multi-mode scanning**: Quick, Full/Advanced, and LAN scanning modes.
 - **Tool orchestration**: Parallel execution with priority-based worker pool
 - **Interactive network graph**: D3.js force-directed visualization of discovered assets
 - **PDF reporting**: Professional reports with executive summary and findings
