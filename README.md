@@ -47,32 +47,60 @@ Built for security professionals, pentesters, and red team operators.
     ├── scripts/            # Utility scripts
     └── tools/              # External tool binaries
 
-## Quick Start
+## Installation (Debian 12 from scratch)
 
-### Requirements
+The automated installer sets up the complete environment: desktop, security tools, branding, SSH, and RDP.
 
-- Debian 12 / Ubuntu 22.04+
-- Python 3.10+
-- Security tools (Nmap, Nuclei, Amass, etc.)
+### Step 1: Install Debian 12
 
-### Installation
+Download the ISO from the official site:
 
-    git clone https://github.com/3breiten/Farosint.git
-    cd Farosint
-    python3 -m venv farosint-env
-    source farosint-env/bin/activate
-    pip install -r requirements.txt
+    https://www.debian.org/download
+
+During installation:
+- Create a user named **`farosint`** (required — the installer expects this username)
+- Minimal install is fine (no desktop environment needed, the script installs everything)
+
+### Step 2: Install Farosint
+
+Log in as `farosint`, then run:
+
+    su -
+    apt update && apt install -y git
+    exit
+    git clone https://github.com/3breiten/Farosint.git ~/FAROSINT
+    sudo bash ~/FAROSINT/install.sh
+
+### Step 3: Reboot
+
+    sudo reboot
+
+After reboot you'll have the full Farosint desktop with LightDM login screen.
+
+### What the installer does
+
+- **Desktop**: Openbox + LightDM + tint2 + jgmenu (dark theme, Kali-style)
+- **Security tools**: Nmap, Nuclei, Amass, Subfinder, Httpx, Nikto, Gobuster, DNSRecon, WhatWeb, enum4linux-ng, theHarvester, RustScan, SNMPwalk
+- **Languages**: Go 1.22.5, Python 3.11 (virtualenv)
+- **Services**: SSH (port 22), xRDP (port 3389)
+- **Branding**: Farosint wallpaper, login screen, avatar, xRDP logo
+- **Launchers**: `farosint start`, `farosint cli`, right-click menu with all tools
 
 ### Usage
 
 **Web Dashboard:**
 
-    python3 gui/app.py
-    # Open http://localhost:5000
+    farosint start
+    # Opens http://localhost:5000
 
 **CLI Mode:**
 
-    python3 engine/core/orchestrator.py --target example.com --mode full
+    farosint cli
+
+**Direct:**
+
+    python3 gui/app.py                                           # Dashboard
+    python3 engine/core/orchestrator.py --target example.com     # CLI
 
 ## Scan Modes
 
