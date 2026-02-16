@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FAROSINT CLI
+Comment=Framework de Análisis OSINT - Modo CLI
+Exec=x-terminal-emulator -e /usr/local/bin/farosint-cli
+Icon=/home/farosint/Farosint.png
+Terminal=false
+Categories=Network;Security;System;
+Keywords=osint;security;pentest;recon;cli;

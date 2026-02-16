@@ -47,5 +47,10 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Tools binaries
+# Tools binaries (downloaded at install time)
 tools/
+
+# Keep system configs and install script
+!system/
+!install.sh
+!requirements.txt

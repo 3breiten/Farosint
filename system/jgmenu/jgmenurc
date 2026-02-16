@@ -1,0 +1,66 @@
+# FAROSINT jgmenu configuration
+# Estilo profesional con colores FAROSINT
+
+stay_alive           = 0
+csv_cmd              = cat ~/.config/jgmenu/farosint-menu.csv
+tint2_look           = 0
+position_mode        = pointer
+edge_snap_x          = 0
+menu_width           = 320
+menu_height_min      = 0
+menu_height_max      = 600
+menu_height_mode     = dynamic
+menu_padding_top     = 10
+menu_padding_right   = 10
+menu_padding_bottom  = 10
+menu_padding_left    = 10
+menu_radius          = 4
+menu_border          = 2
+menu_halign          = left
+menu_valign          = top
+
+sub_spacing          = 4
+sub_padding_top      = 8
+sub_padding_right    = 8
+sub_padding_bottom   = 8
+sub_padding_left     = 8
+sub_hover_action     = 1
+
+item_margin_x        = 4
+item_margin_y        = 6
+item_height          = 32
+item_padding_x       = 8
+item_radius          = 2
+item_border          = 0
+
+sep_height           = 8
+sep_halign           = left
+sep_markup           =
+
+font                 = Noto Sans 11
+font_fallback        = xtg
+icon_size            = 28
+icon_text_spacing    = 12
+icon_theme           = Adwaita
+icon_theme_fallback  = xtg
+
+# Colores FAROSINT (azul oscuro marino)
+color_menu_bg        = #0a1628 95
+color_menu_border    = #357abd 100
+
+color_norm_bg        = #0a1628 0
+color_norm_fg        = #e8f4f8 100
+
+color_sel_bg         = #1a3d5c 90
+color_sel_fg         = #ffffff 100
+color_sel_border     = #357abd 100
+
+color_sep_fg         = #357abd 50
+
+color_scroll_ind     = #357abd 100
+
+color_title_fg       = #4a9ee0 100
+color_title_bg       = #0d2136 80
+color_title_border   = #357abd 100
+
+csv_name_format      = %n

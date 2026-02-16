@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FAROSINT - Modo Simple
+Comment=Dashboard web intuitivo para escaneos OSINT
+Exec=/usr/local/bin/farosint-simple
+Icon=/opt/farosint/icons/farosint-logo.png
+Terminal=false
+Categories=Security;Network;
+Keywords=osint;recon;security;scanning;
+StartupNotify=true

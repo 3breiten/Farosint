@@ -1,0 +1,51 @@
+#!/bin/bash
+###############################################################################
+# FAROSINT - Script de Control Principal
+###############################################################################
+
+case "$1" in
+    start)
+        echo "🚀 Iniciando FAROSINT Dashboard..."
+        systemctl --user start farosint-dashboard 2>/dev/null || \
+        /usr/local/bin/farosint-simple
+        ;;
+    stop)
+        echo "⏹️ Deteniendo FAROSINT..."
+        pkill -f "python3.*app.py"
+        ;;
+    status)
+        if pgrep -f "python3.*app.py" > /dev/null; then
+            echo "✓ Dashboard corriendo"
+            echo "  PID: $(pgrep -f 'python3.*app.py')"
+            echo "  URL: http://localhost:5000"
+        else
+            echo "✗ Dashboard detenido"
+        fi
+        ;;
+    simple)
+        /usr/local/bin/farosint-simple
+        ;;
+    cli)
+        /usr/local/bin/farosint-cli
+        ;;
+    update)
+        echo "🔄 Actualizando herramientas..."
+        nuclei -update-templates
+        echo "✓ Actualización completada"
+        ;;
+    *)
+        echo "FAROSINT - Control Principal"
+        echo ""
+        echo "Uso: farosint {comando}"
+        echo ""
+        echo "Comandos:"
+        echo "  start   - Iniciar dashboard"
+        echo "  stop    - Detener dashboard"
+        echo "  status  - Ver estado"
+        echo "  simple  - Modo Simple (web)"
+        echo "  cli     - Modo CLI (terminal)"
+        echo "  update  - Actualizar herramientas"
+        echo ""
+        exit 1
+        ;;
+esac

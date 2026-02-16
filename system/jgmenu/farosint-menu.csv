@@ -1,0 +1,42 @@
+FAROSINT,^checkout(farosint),/home/farosint/Farosint.png
+
+^tag(farosint)
+^sep(FAROSINT)
+🏠 Dashboard,bash -c 'if pgrep -f "python.*app.py" > /dev/null; then firefox http://localhost:5000; else x-terminal-emulator -e "bash -c \"cd /home/farosint/FAROSINT/gui && python3 app.py\"" & sleep 2 && firefox http://localhost:5000; fi',applications-internet
+⚙️ Advanced,/usr/local/bin/farosint-advanced,preferences-system
+💻 CLI,x-terminal-emulator -e /usr/local/bin/farosint-cli,utilities-terminal
+
+^sep()
+🔍 Reconocimiento,^checkout(recon),folder-saved-search
+🌐 Análisis Web,^checkout(web),network-workgroup
+🔓 Puertos,^checkout(ports),security-high
+🛡️ Vulnerabilidades,^checkout(vulns),security-medium
+
+^sep()
+🌐 Firefox,firefox,firefox-esr
+📁 Archivos,pcmanfm,system-file-manager
+🖥️ Terminal,xfce4-terminal,utilities-terminal
+⚙️ Configuración,obconf,preferences-desktop
+🚪 Cerrar Sesión,openbox --exit,system-log-out
+
+^tag(recon)
+^sep(Reconocimiento)
+Subfinder,x-terminal-emulator -e "subfinder -h",network-wired
+Amass,x-terminal-emulator -e "amass -h",network-wired
+TheHarvester,x-terminal-emulator -e "theHarvester -h",network-wired
+
+^tag(web)
+^sep(Análisis Web)
+Httpx,x-terminal-emulator -e "httpx -h",network-workgroup
+WhatWeb,x-terminal-emulator -e "whatweb -h",network-workgroup
+
+^tag(ports)
+^sep(Puertos & Servicios)
+Rustscan,x-terminal-emulator -e "rustscan -h",security-high
+Nmap,x-terminal-emulator -e "nmap --help",security-high
+
+^tag(vulns)
+^sep(Vulnerabilidades)
+Nuclei,x-terminal-emulator -e "nuclei -h",security-medium
+Vulnerability Matcher,x-terminal-emulator -e "echo 'Vulnerability Matcher - CVEs'; read",security-low
+IP Reputation,x-terminal-emulator -e "echo 'IP Reputation Check'; read",security-low

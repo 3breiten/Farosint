@@ -1,0 +1,932 @@
+#!/bin/bash
+###############################################################################
+# FAROSINT - Modo CLI (VERSIÓN COMPLETA)
+# Menú interactivo por terminal con todas las herramientas implementadas
+# Versión: 1.1
+###############################################################################
+
+# Colores para terminal
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Variables globales
+OUTPUT_BASE="$HOME/FAROSINT/output"
+mkdir -p "$OUTPUT_BASE"
+
+# Función para mostrar header
+show_header() {
+    clear
+    echo -e "${CYAN}"
+    cat << "EOF"
+  ███████╗ █████╗ ██████╗  ██████╗ ███████╗██╗███╗   ██╗████████╗
+  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔════╝██║████╗  ██║╚══██╔══╝
+  █████╗  ███████║██████╔╝██║   ██║███████╗██║██╔██╗ ██║   ██║   
+  ██╔══╝  ██╔══██║██╔══██╗██║   ██║╚════██║██║██║╚██╗██║   ██║   
+  ██║     ██║  ██║██║  ██║╚██████╔╝███████║██║██║ ╚████║   ██║   
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   
+EOF
+    echo -e "                      MODO CLI - Terminal Interactivo"
+    echo -e "${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+}
+
+# ============================================================================
+# MENÚ PRINCIPAL
+# ============================================================================
+
+menu_main() {
+    show_header
+    echo -e "${YELLOW}[MENÚ PRINCIPAL]${NC}"
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} 📡 Reconocimiento"
+    echo -e "  ${GREEN}[2]${NC} 🌐 Análisis Web"
+    echo -e "  ${GREEN}[3]${NC} 🔍 Escaneo de Puertos"
+    echo -e "  ${GREEN}[4]${NC} 🛡️  Vulnerabilidades"
+    echo -e "  ${GREEN}[5]${NC} 📊 Ver Resultados"
+    echo -e "  ${GREEN}[6]${NC} 🚀 Pipeline Completo"
+    echo -e "  ${GREEN}[7]${NC} ⚙️  Configuración"
+    echo -e "  ${GREEN}[8]${NC} 🔄 Actualizar Herramientas"
+    echo ""
+    echo -e "  ${RED}[0]${NC} ❌ Salir"
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -ne "\n${CYAN}Selecciona [0-8]:${NC} "
+    
+    read option
+    
+    case $option in
+        1) menu_recon ;;
+        2) menu_web ;;
+        3) menu_portscan ;;
+        4) menu_vuln ;;
+        5) show_results ;;
+        6) run_pipeline ;;
+        7) menu_config ;;
+        8) update_tools ;;
+        0) 
+            echo ""
+            echo -e "${CYAN}¡Hasta luego!${NC}"
+            exit 0 
+            ;;
+        *) 
+            echo -e "${RED}Opción inválida${NC}"
+            sleep 1
+            menu_main
+            ;;
+    esac
+}
+
+# ============================================================================
+# MENÚ DE RECONOCIMIENTO
+# ============================================================================
+
+menu_recon() {
+    show_header
+    echo -e "${YELLOW}[RECONOCIMIENTO - Subdominios y Assets]${NC}"
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} Subfinder      - Rápido y eficiente"
+    echo -e "  ${GREEN}[2]${NC} Amass          - Profundo con correlación"
+    echo -e "  ${GREEN}[3]${NC} TheHarvester   - Emails y subdominios"
+    echo -e "  ${GREEN}[4]${NC} Shodan         - Búsqueda en base de datos"
+    echo -e "  ${GREEN}[5]${NC} Combo Completo - Todas las herramientas"
+    echo ""
+    echo -e "  ${YELLOW}[0]${NC} ← Volver al menú principal"
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -ne "\n${CYAN}Selecciona [0-5]:${NC} "
+    
+    read option
+    
+    case $option in
+        1) run_subfinder ;;
+        2) run_amass ;;
+        3) run_theharvester ;;
+        4) run_shodan ;;
+        5) run_recon_combo ;;
+        0) menu_main ;;
+        *) 
+            echo -e "${RED}Opción inválida${NC}"
+            sleep 1
+            menu_recon
+            ;;
+    esac
+}
+
+# Función Subfinder
+run_subfinder() {
+    show_header
+    echo -e "${YELLOW}[SUBFINDER - Enumeración de Subdominios]${NC}"
+    echo ""
+    echo -ne "${CYAN}Dominio objetivo:${NC} "
+    read domain
+    
+    if [ -z "$domain" ]; then
+        echo -e "${RED}Error: Dominio requerido${NC}"
+        sleep 2
+        menu_recon
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_${domain}_subfinder"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🔍 Ejecutando Subfinder en: $domain${NC}"
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    
+    subfinder -d "$domain" -all -o "$OUTPUT_DIR/subdomains.txt" -v
+    
+    COUNT=$(wc -l < "$OUTPUT_DIR/subdomains.txt" 2>/dev/null || echo 0)
+    
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${GREEN}✓ Completado${NC}"
+    echo -e "  Subdominios encontrados: ${CYAN}$COUNT${NC}"
+    echo -e "  Guardado en: ${CYAN}$OUTPUT_DIR/subdomains.txt${NC}"
+    echo ""
+    
+    echo -e "${YELLOW}¿Qué deseas hacer?${NC}"
+    echo -e "  ${GREEN}[1]${NC} Ver resultados"
+    echo -e "  ${GREEN}[2]${NC} Ejecutar Httpx en subdominios"
+    echo -e "  ${GREEN}[0]${NC} Volver al menú"
+    echo -ne "\n${CYAN}Opción [0-2]:${NC} "
+    
+    read post_option
+    
+    case $post_option in
+        1)
+            echo ""
+            echo -e "${CYAN}=== Subdominios encontrados ===${NC}"
+            cat "$OUTPUT_DIR/subdomains.txt"
+            echo ""
+            echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+            read
+            menu_recon
+            ;;
+        2)
+            run_httpx_on_file "$OUTPUT_DIR/subdomains.txt" "$OUTPUT_DIR"
+            ;;
+        *)
+            menu_recon
+            ;;
+    esac
+}
+
+# Función Amass
+run_amass() {
+    show_header
+    echo -e "${YELLOW}[AMASS - Enumeración Avanzada]${NC}"
+    echo ""
+    echo -ne "${CYAN}Dominio objetivo:${NC} "
+    read domain
+    
+    if [ -z "$domain" ]; then
+        menu_recon
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_${domain}_amass"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🔍 Ejecutando Amass (esto puede tardar varios minutos)...${NC}"
+    echo ""
+    
+    amass enum -d "$domain" -o "$OUTPUT_DIR/amass_subdomains.txt"
+    
+    COUNT=$(wc -l < "$OUTPUT_DIR/amass_subdomains.txt" 2>/dev/null || echo 0)
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado: $COUNT subdominios${NC}"
+    echo -e "  Guardado en: $OUTPUT_DIR/amass_subdomains.txt"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_recon
+}
+
+# Función TheHarvester
+run_theharvester() {
+    show_header
+    echo -e "${YELLOW}[THEHARVESTER - Recolección de Información]${NC}"
+    echo ""
+    echo -ne "${CYAN}Dominio objetivo:${NC} "
+    read domain
+    
+    if [ -z "$domain" ]; then
+        menu_recon
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_${domain}_harvester"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🔍 Ejecutando TheHarvester...${NC}"
+    echo ""
+    
+    theHarvester -d "$domain" -b all -f "$OUTPUT_DIR/theharvester"
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado${NC}"
+    echo -e "  Resultados en: $OUTPUT_DIR"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_recon
+}
+
+# Función Shodan
+run_shodan() {
+    show_header
+    echo -e "${YELLOW}[SHODAN - Búsqueda en Base de Datos]${NC}"
+    echo ""
+    echo -ne "${CYAN}Query de búsqueda (ej: hostname:example.com):${NC} "
+    read query
+    
+    if [ -z "$query" ]; then
+        menu_recon
+        return
+    fi
+    
+    echo ""
+    echo -e "${GREEN}🔍 Buscando en Shodan...${NC}"
+    echo ""
+    
+    shodan search "$query"
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_recon
+}
+
+# Función Combo Completo
+run_recon_combo() {
+    show_header
+    echo -e "${YELLOW}[COMBO COMPLETO - RECONOCIMIENTO]${NC}"
+    echo ""
+    echo -ne "${CYAN}Dominio objetivo:${NC} "
+    read domain
+    
+    if [ -z "$domain" ]; then
+        menu_recon
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_${domain}_combo"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🚀 Ejecutando TODAS las herramientas de reconocimiento...${NC}"
+    echo ""
+    
+    echo -e "${CYAN}[1/3] Subfinder...${NC}"
+    subfinder -d "$domain" -all -o "$OUTPUT_DIR/subfinder.txt" -silent
+    
+    echo -e "${CYAN}[2/3] Amass (timeout 5 min)...${NC}"
+    timeout 300 amass enum -d "$domain" -o "$OUTPUT_DIR/amass.txt" -silent 2>/dev/null
+    
+    echo -e "${CYAN}[3/3] TheHarvester...${NC}"
+    theHarvester -d "$domain" -b all -f "$OUTPUT_DIR/theharvester" 2>/dev/null
+    
+    # Combinar y eliminar duplicados
+    echo ""
+    echo -e "${CYAN}Combinando resultados...${NC}"
+    cat "$OUTPUT_DIR"/*.txt 2>/dev/null | sort -u > "$OUTPUT_DIR/all_subdomains.txt"
+    
+    COUNT=$(wc -l < "$OUTPUT_DIR/all_subdomains.txt" 2>/dev/null || echo 0)
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado: $COUNT subdominios únicos${NC}"
+    echo -e "  Guardado en: $OUTPUT_DIR/all_subdomains.txt"
+    echo ""
+    echo -ne "${CYAN}¿Ejecutar Httpx en los resultados? (s/n):${NC} "
+    read run_http
+    
+    if [ "$run_http" = "s" ]; then
+        run_httpx_on_file "$OUTPUT_DIR/all_subdomains.txt" "$OUTPUT_DIR"
+    else
+        echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+        read
+        menu_recon
+    fi
+}
+
+# ============================================================================
+# MENÚ DE ANÁLISIS WEB
+# ============================================================================
+
+menu_web() {
+    show_header
+    echo -e "${YELLOW}[ANÁLISIS WEB]${NC}"
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} Httpx          - Probar URLs activas"
+    echo -e "  ${GREEN}[2]${NC} WhatWeb        - Identificar tecnologías"
+    echo -e "  ${GREEN}[3]${NC} Wafw00f        - Detectar WAF"
+    echo ""
+    echo -e "  ${YELLOW}[0]${NC} ← Volver"
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -ne "\n${CYAN}Selecciona [0-3]:${NC} "
+    
+    read option
+    
+    case $option in
+        1) run_httpx_manual ;;
+        2) run_whatweb ;;
+        3) run_wafw00f ;;
+        0) menu_main ;;
+        *) menu_web ;;
+    esac
+}
+
+# Función Httpx sobre archivo
+run_httpx_on_file() {
+    local input_file="$1"
+    local output_dir="$2"
+    
+    echo ""
+    echo -e "${GREEN}🌐 Ejecutando Httpx...${NC}"
+    echo ""
+    
+    httpx -l "$input_file" \
+        -status-code \
+        -title \
+        -tech-detect \
+        -follow-redirects \
+        -o "$output_dir/alive_urls.txt"
+    
+    COUNT=$(wc -l < "$output_dir/alive_urls.txt" 2>/dev/null || echo 0)
+    
+    echo ""
+    echo -e "${GREEN}✓ URLs activas: $COUNT${NC}"
+    echo -e "  Guardado en: $output_dir/alive_urls.txt"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    
+    menu_recon
+}
+
+# Función Httpx manual
+run_httpx_manual() {
+    show_header
+    echo -e "${YELLOW}[HTTPX - Prueba de URLs Activas]${NC}"
+    echo ""
+    echo -e "Opciones:"
+    echo -e "  ${GREEN}[1]${NC} Desde archivo de subdominios"
+    echo -e "  ${GREEN}[2]${NC} URL única"
+    echo -ne "\n${CYAN}Opción [1-2]:${NC} "
+    read opt
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_httpx"
+    mkdir -p "$OUTPUT_DIR"
+    
+    if [ "$opt" = "1" ]; then
+        echo -ne "${CYAN}Ruta del archivo:${NC} "
+        read file
+        if [ -f "$file" ]; then
+            echo ""
+            httpx -l "$file" -status-code -title -o "$OUTPUT_DIR/results.txt"
+        else
+            echo -e "${RED}Archivo no encontrado${NC}"
+        fi
+    elif [ "$opt" = "2" ]; then
+        echo -ne "${CYAN}URL:${NC} "
+        read url
+        echo ""
+        echo "$url" | httpx -status-code -title -o "$OUTPUT_DIR/results.txt"
+    fi
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_web
+}
+
+# Función WhatWeb
+run_whatweb() {
+    show_header
+    echo -e "${YELLOW}[WHATWEB - Identificación de Tecnologías]${NC}"
+    echo ""
+    echo -ne "${CYAN}URL objetivo:${NC} "
+    read url
+    
+    if [ -z "$url" ]; then
+        menu_web
+        return
+    fi
+    
+    echo ""
+    whatweb "$url" -v
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_web
+}
+
+# Función Wafw00f
+run_wafw00f() {
+    show_header
+    echo -e "${YELLOW}[WAFW00F - Detección de WAF]${NC}"
+    echo ""
+    echo -ne "${CYAN}URL objetivo:${NC} "
+    read url
+    
+    if [ -z "$url" ]; then
+        menu_web
+        return
+    fi
+    
+    echo ""
+    wafw00f "$url"
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_web
+}
+
+# ============================================================================
+# MENÚ DE ESCANEO DE PUERTOS
+# ============================================================================
+
+menu_portscan() {
+    show_header
+    echo -e "${YELLOW}[ESCANEO DE PUERTOS]${NC}"
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} Nmap Quick     - Top 100 puertos (~1 min)"
+    echo -e "  ${GREEN}[2]${NC} Nmap Full      - Todos los puertos (~10 min)"
+    echo -e "  ${GREEN}[3]${NC} Nmap Custom    - Puertos específicos"
+    echo ""
+    echo -e "  ${YELLOW}[0]${NC} ← Volver"
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -ne "\n${CYAN}Selecciona [0-3]:${NC} "
+    
+    read option
+    
+    case $option in
+        1) run_nmap_quick ;;
+        2) run_nmap_full ;;
+        3) run_nmap_custom ;;
+        0) menu_main ;;
+        *) menu_portscan ;;
+    esac
+}
+
+# Función Nmap Quick
+run_nmap_quick() {
+    show_header
+    echo -e "${YELLOW}[NMAP QUICK - Top 100 Puertos]${NC}"
+    echo ""
+    echo -ne "${CYAN}Target (IP o dominio):${NC} "
+    read target
+    
+    if [ -z "$target" ]; then
+        menu_portscan
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_nmap_quick"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🔍 Escaneando top 100 puertos en $target...${NC}"
+    echo ""
+    
+    sudo nmap -F "$target" -oN "$OUTPUT_DIR/nmap_quick.txt"
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado${NC}"
+    echo -e "  Guardado en: $OUTPUT_DIR/nmap_quick.txt"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_portscan
+}
+
+# Función Nmap Full
+run_nmap_full() {
+    show_header
+    echo -e "${YELLOW}[NMAP FULL - Todos los Puertos]${NC}"
+    echo ""
+    echo -ne "${CYAN}Target (IP o dominio):${NC} "
+    read target
+    
+    if [ -z "$target" ]; then
+        menu_portscan
+        return
+    fi
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_nmap_full"
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo ""
+    echo -e "${GREEN}🔍 Escaneando TODOS los puertos en $target${NC}"
+    echo -e "${YELLOW}(esto puede tardar 10-15 minutos)...${NC}"
+    echo ""
+    
+    sudo nmap -p- "$target" -oN "$OUTPUT_DIR/nmap_full.txt"
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado${NC}"
+    echo -e "  Guardado en: $OUTPUT_DIR/nmap_full.txt"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_portscan
+}
+
+# Función Nmap Custom
+run_nmap_custom() {
+    show_header
+    echo -e "${YELLOW}[NMAP CUSTOM]${NC}"
+    echo ""
+    echo -ne "${CYAN}Target:${NC} "
+    read target
+    echo -ne "${CYAN}Puertos (ej: 80,443,8080 o 1-1000):${NC} "
+    read ports
+    
+    if [ -z "$target" ] || [ -z "$ports" ]; then
+        menu_portscan
+        return
+    fi
+    
+    echo ""
+    echo -e "${GREEN}🔍 Escaneando puertos $ports en $target...${NC}"
+    echo ""
+    
+    sudo nmap -p "$ports" "$target"
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_portscan
+}
+
+# ============================================================================
+# MENÚ DE VULNERABILIDADES
+# ============================================================================
+
+menu_vuln() {
+    show_header
+    echo -e "${YELLOW}[DETECCIÓN DE VULNERABILIDADES]${NC}"
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} Nuclei Full        - Todos los templates"
+    echo -e "  ${GREEN}[2]${NC} Nuclei Critical    - Solo críticas/altas"
+    echo -e "  ${GREEN}[3]${NC} Nuclei Custom      - Templates específicos"
+    echo ""
+    echo -e "  ${YELLOW}[0]${NC} ← Volver"
+    echo ""
+    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -ne "\n${CYAN}Selecciona [0-3]:${NC} "
+    
+    read option
+    
+    case $option in
+        1) run_nuclei_full ;;
+        2) run_nuclei_critical ;;
+        3) run_nuclei_custom ;;
+        0) menu_main ;;
+        *) menu_vuln ;;
+    esac
+}
+
+# Función Nuclei Full
+run_nuclei_full() {
+    show_header
+    echo -e "${YELLOW}[NUCLEI FULL - Todos los Templates]${NC}"
+    echo ""
+    echo -e "Opciones de input:"
+    echo -e "  ${GREEN}[1]${NC} Archivo de URLs"
+    echo -e "  ${GREEN}[2]${NC} URL única"
+    echo -ne "\n${CYAN}Opción [1-2]:${NC} "
+    read opt
+    
+    OUTPUT_DIR="$OUTPUT_BASE/$(date +%Y%m%d_%H%M%S)_nuclei_full"
+    mkdir -p "$OUTPUT_DIR"
+    
+    if [ "$opt" = "1" ]; then
+        echo -ne "${CYAN}Ruta del archivo:${NC} "
+        read input
+        if [ -f "$input" ]; then
+            echo ""
+            echo -e "${GREEN}🛡️  Ejecutando Nuclei (todos los templates)...${NC}"
+            echo ""
+            nuclei -l "$input" -o "$OUTPUT_DIR/nuclei_results.txt"
+        else
+            echo -e "${RED}Archivo no encontrado${NC}"
+        fi
+    elif [ "$opt" = "2" ]; then
+        echo -ne "${CYAN}URL:${NC} "
+        read input
+        echo ""
+        echo -e "${GREEN}🛡️  Ejecutando Nuclei...${NC}"
+        echo ""
+        nuclei -u "$input" -o "$OUTPUT_DIR/nuclei_results.txt"
+    fi
+    
+    echo ""
+    echo -e "${GREEN}✓ Completado${NC}"
+    echo -e "  Resultados en: $OUTPUT_DIR/nuclei_results.txt"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_vuln
+}
+
+# Función Nuclei Critical
+run_nuclei_critical() {
+    show_header
+    echo -e "${YELLOW}[NUCLEI CRITICAL - Solo Críticas/Altas]${NC}"
+    echo ""
+    echo -ne "${CYAN}URL objetivo:${NC} "
+    read url
+    
+    if [ -z "$url" ]; then
+        menu_vuln
+        return
+    fi
+    
+    echo ""
+    echo -e "${GREEN}🛡️  Escaneando solo severidad critical/high...${NC}"
+    echo ""
+    
+    nuclei -u "$url" -s critical,high
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_vuln
+}
+
+# Función Nuclei Custom
+run_nuclei_custom() {
+    show_header
+    echo -e "${YELLOW}[NUCLEI CUSTOM]${NC}"
+    echo ""
+    echo -ne "${CYAN}URL objetivo:${NC} "
+    read url
+    echo -ne "${CYAN}Template ID o ruta (ej: cves/2021/):${NC} "
+    read template
+    
+    if [ -z "$url" ]; then
+        menu_vuln
+        return
+    fi
+    
+    echo ""
+    echo -e "${GREEN}🛡️  Ejecutando Nuclei con template: $template${NC}"
+    echo ""
+    
+    nuclei -u "$url" -t "$template"
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_vuln
+}
+
+# ============================================================================
+# PIPELINE COMPLETO
+# ============================================================================
+
+run_pipeline() {
+    show_header
+    echo -e "${YELLOW}[PIPELINE COMPLETO - Escaneo Automatizado]${NC}"
+    echo ""
+    echo -ne "${CYAN}Dominio objetivo:${NC} "
+    read domain
+    
+    if [ -z "$domain" ]; then
+        echo -e "${RED}Error: Dominio requerido${NC}"
+        sleep 2
+        menu_main
+        return
+    fi
+    
+    echo ""
+    echo -e "${YELLOW}Tipo de escaneo:${NC}"
+    echo -e "  ${GREEN}[1]${NC} Quick - Rápido (~5-10 minutos)"
+    echo -e "  ${GREEN}[2]${NC} Full  - Completo (~30-60 minutos)"
+    echo -ne "\n${CYAN}Opción [1-2]:${NC} "
+    
+    read scan_type
+    
+    TYPE="quick"
+    [ "$scan_type" == "2" ] && TYPE="full"
+    
+    echo ""
+    echo -e "${GREEN}🚀 Iniciando pipeline $TYPE para: $domain${NC}"
+    echo ""
+    
+    # Buscar y activar entorno virtual
+    VENV_PATH=""
+    if [ -d "$HOME/farosint-env" ]; then
+        VENV_PATH="$HOME/farosint-env"
+    elif [ -d "$HOME/FAROSINT/farosint-env" ]; then
+        VENV_PATH="$HOME/FAROSINT/farosint-env"
+    fi
+    
+    if [ -n "$VENV_PATH" ]; then
+        source "$VENV_PATH/bin/activate" 2>/dev/null
+    fi
+    
+    cd ~/FAROSINT/engine
+    
+    python3 << PYPIPELINE
+from core.orchestrator import FAROSINTOrchestrator
+
+try:
+    orchestrator = FAROSINTOrchestrator()
+    results = orchestrator.scan('$domain', scan_type='$TYPE')
+    
+    print('\n' + '='*60)
+    print('  ✓ PIPELINE COMPLETADO')
+    print('='*60)
+    print(f'  Subdominios:       {len(results.get("subdomains", []))}')
+    print(f'  URLs activas:      {len(results.get("alive_urls", []))}')
+    print(f'  Servicios:         {len(results.get("ports", {}))}')
+    print(f'  Vulnerabilidades:  {len(results.get("vulnerabilities", []))}')
+    print('='*60 + '\n')
+    
+    orchestrator.shutdown()
+except Exception as e:
+    print(f'Error: {e}')
+PYPIPELINE
+    
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_main
+}
+
+# ============================================================================
+# VER RESULTADOS
+# ============================================================================
+
+show_results() {
+    show_header
+    echo -e "${YELLOW}[RESULTADOS DE ESCANEOS]${NC}"
+    echo ""
+    echo "Últimos 10 escaneos:"
+    echo ""
+    
+    if [ -d "$OUTPUT_BASE" ] && [ "$(ls -A $OUTPUT_BASE 2>/dev/null)" ]; then
+        ls -lt "$OUTPUT_BASE" 2>/dev/null | head -11 | tail -10 | nl
+    else
+        echo -e "${YELLOW}  No hay resultados todavía${NC}"
+    fi
+    
+    echo ""
+    echo -e "${YELLOW}Opciones:${NC}"
+    echo -e "  ${GREEN}[1]${NC} Abrir directorio de resultados en explorador"
+    echo -e "  ${GREEN}[2]${NC} Ver contenido de un resultado específico"
+    echo -e "  ${GREEN}[0]${NC} Volver"
+    echo -ne "\n${CYAN}Opción [0-2]:${NC} "
+    
+    read opt
+    
+    case $opt in
+        1)
+            xdg-open "$OUTPUT_BASE" 2>/dev/null || thunar "$OUTPUT_BASE" 2>/dev/null || nautilus "$OUTPUT_BASE" 2>/dev/null
+            menu_main
+            ;;
+        2)
+            echo -ne "${CYAN}Nombre del directorio:${NC} "
+            read dirname
+            if [ -d "$OUTPUT_BASE/$dirname" ]; then
+                echo ""
+                ls -lh "$OUTPUT_BASE/$dirname"
+                echo ""
+                echo -ne "${CYAN}Presiona ENTER...${NC}"
+                read
+            else
+                echo -e "${RED}Directorio no encontrado${NC}"
+                sleep 1
+            fi
+            show_results
+            ;;
+        *)
+            menu_main
+            ;;
+    esac
+}
+
+# ============================================================================
+# CONFIGURACIÓN
+# ============================================================================
+
+menu_config() {
+    show_header
+    echo -e "${YELLOW}[CONFIGURACIÓN]${NC}"
+    echo ""
+    
+    CONFIG_FILE="$HOME/FAROSINT/engine/config.yaml"
+    
+    if [ -f "$CONFIG_FILE" ]; then
+        echo "Archivo de configuración: $CONFIG_FILE"
+    else
+        echo -e "${YELLOW}Archivo de configuración no encontrado${NC}"
+    fi
+    
+    echo ""
+    echo -e "  ${GREEN}[1]${NC} Ver configuración actual"
+    echo -e "  ${GREEN}[2]${NC} Editar configuración"
+    echo -e "  ${GREEN}[3]${NC} Gestionar API Keys"
+    echo -e "  ${GREEN}[0]${NC} Volver"
+    echo -ne "\n${CYAN}Opción [0-3]:${NC} "
+    
+    read opt
+    
+    case $opt in
+        1) 
+            echo ""
+            cat "$CONFIG_FILE" 2>/dev/null || echo -e "${RED}No encontrado${NC}"
+            echo ""
+            echo -ne "${CYAN}Presiona ENTER...${NC}"
+            read
+            menu_config
+            ;;
+        2)
+            nano "$CONFIG_FILE" || vi "$CONFIG_FILE"
+            menu_config
+            ;;
+        3)
+            echo ""
+            echo "API Keys se configuran en: $HOME/FAROSINT/config/api_keys.yaml"
+            echo ""
+            echo -ne "${CYAN}¿Editar? (s/n):${NC} "
+            read edit_api
+            if [ "$edit_api" = "s" ]; then
+                nano "$HOME/FAROSINT/config/api_keys.yaml" 2>/dev/null
+            fi
+            menu_config
+            ;;
+        *)
+            menu_main
+            ;;
+    esac
+}
+
+# ============================================================================
+# ACTUALIZAR HERRAMIENTAS
+# ============================================================================
+
+update_tools() {
+    show_header
+    echo -e "${YELLOW}[ACTUALIZAR HERRAMIENTAS]${NC}"
+    echo ""
+    
+    echo -e "${GREEN}[1/3] Actualizando Nuclei templates...${NC}"
+    nuclei -update-templates
+    
+    echo ""
+    echo -e "${GREEN}[2/3] Actualizando Go tools...${NC}"
+    go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null || echo "Subfinder: OK"
+    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null || echo "Httpx: OK"
+    go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest 2>/dev/null || echo "Nuclei: OK"
+    
+    echo ""
+    echo -e "${GREEN}[3/3] Verificando versiones instaladas...${NC}"
+    echo ""
+    echo -e "${CYAN}Versiones actuales:${NC}"
+    echo "  Subfinder: $(subfinder -version 2>&1 | head -1 | grep -oP 'v\d+\.\d+\.\d+')"
+    echo "  Httpx:     $(httpx -version 2>&1 | head -1 | grep -oP 'v\d+\.\d+\.\d+')"
+    echo "  Nuclei:    $(nuclei -version 2>&1 | head -1 | grep -oP 'v\d+\.\d+\.\d+')"
+    echo "  Nmap:      $(nmap --version 2>&1 | head -2 | tail -1 | grep -oP '\d+\.\d+')"
+    
+    echo ""
+    echo -e "${GREEN}✓ Actualización completada${NC}"
+    echo ""
+    echo -ne "${CYAN}Presiona ENTER para continuar...${NC}"
+    read
+    menu_main
+}
+
+# ============================================================================
+# INICIO DEL SCRIPT
+# ============================================================================
+
+# Verificar que estamos en un entorno con las herramientas necesarias
+if ! command -v subfinder &> /dev/null; then
+    echo -e "${YELLOW}⚠️  Advertencia: Subfinder no encontrado en PATH${NC}"
+    echo "Algunas funcionalidades pueden no estar disponibles"
+    echo ""
+    sleep 2
+fi
+
+# Crear directorio de output si no existe
+mkdir -p "$OUTPUT_BASE"
+
+# Iniciar menú principal
+menu_main

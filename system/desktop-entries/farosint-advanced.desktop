@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FAROSINT Advanced
+Comment=Framework de Análisis OSINT - Modo Avanzado
+Exec=/usr/local/bin/farosint-advanced
+Icon=/home/farosint/Farosint.png
+Terminal=false
+Categories=Network;Security;
+Keywords=osint;security;pentest;recon;

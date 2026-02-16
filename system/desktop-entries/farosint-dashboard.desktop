@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FAROSINT Dashboard
+Comment=Framework de Análisis OSINT - Modo Simple
+Exec=/usr/local/bin/farosint-simple
+Icon=/home/farosint/Farosint.png
+Terminal=false
+Categories=Network;Security;
+Keywords=osint;security;pentest;recon;

@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/3.4/menu">
+
+<menu id="root-menu" label="Openbox 3">
+    
+    <!-- FAROSINT Menu Principal con Submenús -->
+    <menu id="farosint-menu" label="FAROSINT">
+        
+        <!-- Lanzadores principales -->
+        <item label="🌐 Modo Simple (Dashboard)">
+            <action name="Execute">
+                <command>/usr/local/bin/farosint-simple</command>
+            </action>
+        </item>
+        
+        <item label="🔧 Modo Avanzado (Gráfico)">
+            <action name="Execute">
+                <command>/usr/local/bin/farosint-advanced</command>
+            </action>
+        </item>
+        
+        <item label="⌨️ Modo CLI (Terminal)">
+            <action name="Execute">
+                <command>x-terminal-emulator -e /usr/local/bin/farosint-cli</command>
+            </action>
+        </item>
+        
+        <separator />
+        
+        <!-- Submenú de Reconocimiento -->
+        <menu id="farosint-recon" label="📡 Reconocimiento">
+            <item label="Subfinder">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; subfinder -d $d -all; read'</command>
+                </action>
+            </item>
+            <item label="Amass">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; amass enum -d $d; read'</command>
+                </action>
+            </item>
+            <item label="TheHarvester">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; theHarvester -d $d -b all; read'</command>
+                </action>
+            </item>
+            <item label="Shodan">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Query: " q; shodan search "$q"; read'</command>
+                </action>
+            </item>
+        </menu>
+        
+        <!-- Submenú de Análisis Web -->
+        <menu id="farosint-web" label="🌐 Análisis Web">
+            <item label="Httpx">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; echo $u | httpx -status-code -title; read'</command>
+                </action>
+            </item>
+            <item label="WhatWeb">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; whatweb $u -v; read'</command>
+                </action>
+            </item>
+            <item label="Wafw00f">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; wafw00f $u; read'</command>
+                </action>
+            </item>
+        </menu>
+        
+        <!-- Submenú de Port Scanning -->
+        <menu id="farosint-portscan" label="🔍 Escaneo Puertos">
+            <item label="Nmap Quick (Top 100)">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; sudo nmap -F $t; read'</command>
+                </action>
+            </item>
+            <item label="Nmap Full">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; sudo nmap -p- $t; read'</command>
+                </action>
+            </item>
+            <item label="Nmap Custom">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; read -p "Puertos: " p; sudo nmap -p $p $t; read'</command>
+                </action>
+            </item>
+        </menu>
+        
+        <!-- Submenú de Vulnerabilidades -->
+        <menu id="farosint-vuln" label="🛡️ Vulnerabilidades">
+            <item label="Nuclei Full">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; nuclei -u $u; read'</command>
+                </action>
+            </item>
+            <item label="Nuclei Critical">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; nuclei -u $u -s critical,high; read'</command>
+                </action>
+            </item>
+            <item label="SearchSploit">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'read -p "Query: " q; searchsploit "$q"; read'</command>
+                </action>
+            </item>
+        </menu>
+        
+        <separator />
+        
+        <!-- Submenú de Utilidades -->
+        <menu id="farosint-utils" label="⚙️ Utilidades">
+            <item label="Ver Resultados">
+                <action name="Execute">
+                    <command>thunar ~/FAROSINT/output</command>
+                </action>
+            </item>
+            <item label="Actualizar Nuclei">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'nuclei -update-templates; read'</command>
+                </action>
+            </item>
+            <item label="Ver Estado Dashboard">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'farosint status; read'</command>
+                </action>
+            </item>
+            <item label="Detener Dashboard">
+                <action name="Execute">
+                    <command>x-terminal-emulator -e bash -c 'farosint stop; read'</command>
+                </action>
+            </item>
+        </menu>
+        
+    </menu>
+    
+    <separator />
+    
+    <!-- Applications -->
+    <menu id="applications-menu" label="Applications">
+        <item label="Terminal">
+            <action name="Execute">
+                <command>x-terminal-emulator</command>
+            </action>
+        </item>
+        <item label="File Manager">
+            <action name="Execute">
+                <command>thunar</command>
+            </action>
+        </item>
+        <item label="Web Browser">
+            <action name="Execute">
+                <command>firefox</command>
+            </action>
+        </item>
+        <item label="Text Editor">
+            <action name="Execute">
+                <command>mousepad</command>
+            </action>
+        </item>
+    </menu>
+    
+    <separator />
+    
+    <!-- System -->
+    <menu id="system-menu" label="System">
+        <item label="Openbox Configuration Manager">
+            <action name="Execute">
+                <command>obconf</command>
+            </action>
+        </item>
+        <item label="Reconfigure Openbox">
+            <action name="Execute">
+                <command>openbox --reconfigure</command>
+            </action>
+        </item>
+    </menu>
+    
+    <separator />
+    
+    <item label="Lock Screen">
+        <action name="Execute">
+            <command>xscreensaver-command -lock</command>
+        </action>
+    </item>
+    
+    <separator />
+    
+    <!-- Exit -->
+    <menu id="exit-menu" label="Exit">
+        <item label="Log Out">
+            <action name="Exit">
+                <prompt>yes</prompt>
+            </action>
+        </item>
+        <item label="Reboot">
+            <action name="Execute">
+                <command>systemctl reboot</command>
+            </action>
+        </item>
+        <item label="Shutdown">
+            <action name="Execute">
+                <command>systemctl poweroff</command>
+            </action>
+        </item>
+    </menu>
+    
+</menu>
+
+</openbox_menu>

@@ -1,0 +1,22 @@
+#!/bin/bash
+# FAROSINT Openbox Autostart
+
+# Fondo de pantalla FAROSINT - se auto-reajusta al cambiar resolución
+~/.config/openbox/wallpaper-daemon.sh &
+
+# Panel tint2 (si está instalado)
+if command -v tint2 &> /dev/null; then
+    tint2 &
+fi
+
+# Compositor para transparencias (opcional)
+if command -v picom &> /dev/null; then
+    picom -b &
+elif command -v compton &> /dev/null; then
+    compton -b &
+fi
+
+# Notificaciones
+if command -v dunst &> /dev/null; then
+    dunst &
+fi

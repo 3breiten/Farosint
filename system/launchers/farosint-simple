@@ -1,0 +1,185 @@
+#!/bin/bash
+###############################################################################
+# FAROSINT - Modo Simple (VERSIÓN CORREGIDA)
+# Lanza el dashboard web y abre el navegador
+# Versión: 1.1
+###############################################################################
+
+# Colores
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+echo -e "${CYAN}"
+cat << "EOF"
+  ███████╗ █████╗ ██████╗  ██████╗ ███████╗██╗███╗   ██╗████████╗
+  ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔════╝██║████╗  ██║╚══██╔══╝
+  █████╗  ███████║██████╔╝██║   ██║███████╗██║██╔██╗ ██║   ██║   
+  ██╔══╝  ██╔══██║██╔══██╗██║   ██║╚════██║██║██║╚██╗██║   ██║   
+  ██║     ██║  ██║██║  ██║╚██████╔╝███████║██║██║ ╚████║   ██║   
+  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝   ╚═╝   
+                                                                   
+                    MODO SIMPLE - Dashboard Web
+EOF
+echo -e "${NC}"
+
+# Buscar entorno virtual en ubicaciones comunes
+VENV_PATH=""
+if [ -d "$HOME/farosint-env" ]; then
+    VENV_PATH="$HOME/farosint-env"
+elif [ -d "$HOME/FAROSINT/farosint-env" ]; then
+    VENV_PATH="$HOME/FAROSINT/farosint-env"
+elif [ -d "/opt/farosint/farosint-env" ]; then
+    VENV_PATH="/opt/farosint/farosint-env"
+else
+    echo -e "${RED}❌ Error: Entorno virtual no encontrado${NC}"
+    echo ""
+    echo "Buscado en:"
+    echo "  - $HOME/farosint-env"
+    echo "  - $HOME/FAROSINT/farosint-env"
+    echo "  - /opt/farosint/farosint-env"
+    echo ""
+    echo "¿Dónde está tu entorno virtual?"
+    echo -ne "${CYAN}Ruta completa (o Enter para crear en ~/farosint-env):${NC} "
+    read custom_path
+    
+    if [ -z "$custom_path" ]; then
+        echo ""
+        echo -e "${YELLOW}Creando entorno virtual en ~/farosint-env...${NC}"
+        python3 -m venv ~/farosint-env
+        
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Error al crear entorno virtual${NC}"
+            exit 1
+        fi
+        
+        VENV_PATH="$HOME/farosint-env"
+        
+        # Instalar dependencias
+        echo -e "${YELLOW}Instalando dependencias...${NC}"
+        source "$VENV_PATH/bin/activate"
+        pip install --upgrade pip
+        pip install flask flask-socketio pyyaml
+        
+    else
+        VENV_PATH="$custom_path"
+    fi
+fi
+
+# Verificar que existe el activate
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+    echo -e "${RED}❌ Error: $VENV_PATH/bin/activate no encontrado${NC}"
+    echo "El entorno virtual parece estar corrupto"
+    exit 1
+fi
+
+# Activar entorno
+echo -e "${GREEN}✓ Activando entorno: $VENV_PATH${NC}"
+source "$VENV_PATH/bin/activate"
+
+# Verificar que app.py existe
+if [ ! -f "$HOME/FAROSINT/gui/app.py" ]; then
+    echo -e "${RED}❌ Error: $HOME/FAROSINT/gui/app.py no encontrado${NC}"
+    echo ""
+    echo "Verifica que FAROSINT esté instalado en: $HOME/FAROSINT/"
+    exit 1
+fi
+
+# Verificar puerto 5000 disponible
+if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo -e "${YELLOW}⚠️  Puerto 5000 ya está en uso${NC}"
+    echo ""
+    PID=$(lsof -Pi :5000 -sTCP:LISTEN -t)
+    echo "Proceso usando el puerto: PID $PID"
+    echo ""
+    echo -ne "${CYAN}¿Detener el proceso anterior? (s/n):${NC} "
+    read kill_prev
+    
+    if [ "$kill_prev" = "s" ]; then
+        kill $PID
+        sleep 2
+    else
+        echo ""
+        echo "Dashboard ya está corriendo en http://localhost:5000"
+        
+        # Intentar abrir navegador
+        if command -v firefox >/dev/null 2>&1; then
+            firefox http://localhost:5000 >/dev/null 2>&1 &
+        elif command -v chromium >/dev/null 2>&1; then
+            chromium http://localhost:5000 >/dev/null 2>&1 &
+        else
+            xdg-open http://localhost:5000 2>/dev/null &
+        fi
+        
+        exit 0
+    fi
+fi
+
+# Iniciar dashboard
+cd "$HOME/FAROSINT/gui"
+
+echo -e "${GREEN}⏳ Iniciando dashboard...${NC}"
+
+# Iniciar en background con nohup
+nohup python3 app.py > /tmp/farosint-dashboard.log 2>&1 &
+DASHBOARD_PID=$!
+
+# Esperar a que inicie (máximo 10 segundos)
+for i in {1..10}; do
+    sleep 1
+    if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+        break
+    fi
+    if ! kill -0 $DASHBOARD_PID 2>/dev/null; then
+        echo -e "${RED}❌ Error: Dashboard no pudo iniciarse${NC}"
+        echo ""
+        echo "Últimas 20 líneas del log:"
+        tail -20 /tmp/farosint-dashboard.log
+        exit 1
+    fi
+done
+
+# Verificar que está corriendo
+if ! lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+    echo -e "${RED}❌ Error: Dashboard no respondió en 10 segundos${NC}"
+    echo ""
+    echo "Revisa los logs: tail /tmp/farosint-dashboard.log"
+    exit 1
+fi
+
+# Abrir navegador
+echo -e "${GREEN}✓ Dashboard iniciado correctamente${NC}"
+echo -e "${CYAN}🌐 Abriendo navegador...${NC}"
+
+# Intentar varios navegadores en orden
+if command -v firefox >/dev/null 2>&1; then
+    firefox http://localhost:5000 >/dev/null 2>&1 &
+elif command -v chromium >/dev/null 2>&1; then
+    chromium http://localhost:5000 >/dev/null 2>&1 &
+elif command -v google-chrome >/dev/null 2>&1; then
+    google-chrome http://localhost:5000 >/dev/null 2>&1 &
+else
+    xdg-open http://localhost:5000 >/dev/null 2>&1 &
+fi
+
+# Información final
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  ✓ Dashboard corriendo"
+echo "  URL:  http://localhost:5000"
+echo "  PID:  $DASHBOARD_PID"
+echo "  Logs: /tmp/farosint-dashboard.log"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "Para detener:"
+echo "  kill $DASHBOARD_PID"
+echo "  o ejecuta: farosint stop"
+echo ""
+echo "Para ver logs en tiempo real:"
+echo "  tail -f /tmp/farosint-dashboard.log"
+echo ""
+
+# Guardar PID para poder detenerlo después
+echo $DASHBOARD_PID > /tmp/farosint-dashboard.pid

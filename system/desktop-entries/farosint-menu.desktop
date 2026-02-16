@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=FAROSINT
+Comment=Menú de Inicio FAROSINT
+Exec=/home/farosint/farosint-menu-popup.sh
+Icon=/home/farosint/Farosint.png
+Terminal=false
+Categories=System;
+Keywords=farosint;menu;inicio;
+StartupNotify=false
