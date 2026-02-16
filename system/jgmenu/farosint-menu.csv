@@ -15,28 +15,29 @@ FAROSINT,^checkout(farosint),/home/farosint/Farosint.png
 ^sep()
 🌐 Firefox,firefox,firefox-esr
 📁 Archivos,pcmanfm,system-file-manager
-🖥️ Terminal,xfce4-terminal,utilities-terminal
+🖥️ Terminal,lxterm,utilities-terminal
 ⚙️ Configuración,obconf,preferences-desktop
 🚪 Cerrar Sesión,openbox --exit,system-log-out
 
 ^tag(recon)
 ^sep(Reconocimiento)
-Subfinder,x-terminal-emulator -e "subfinder -h",network-wired
-Amass,x-terminal-emulator -e "amass -h",network-wired
-TheHarvester,x-terminal-emulator -e "theHarvester -h",network-wired
+Subfinder,lxterm -title "Subfinder" -e bash -c 'echo "=== SUBFINDER ==="; echo "Uso: subfinder -d dominio.com"; echo ""; /home/farosint/go/bin/subfinder -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash --rcfile <(echo "export PATH=/home/farosint/go/bin:$PATH")',network-wired
+Amass,lxterm -title "Amass" -e bash -c 'echo "=== AMASS ==="; echo "Uso: amass enum -d dominio.com -passive"; echo ""; /usr/local/bin/amass -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',network-wired
+TheHarvester,lxterm -title "theHarvester" -e bash -c 'echo "=== theHarvester ==="; echo "Uso: theHarvester -d dominio.com -b all"; echo ""; /home/farosint/FAROSINT/bin/theHarvester -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash --rcfile <(echo "export PATH=/home/farosint/FAROSINT/bin:$PATH")',network-wired
+DNSRecon,lxterm -title "DNSRecon" -e bash -c 'echo "=== DNSRECON ==="; echo "Uso: dnsrecon -d dominio.com"; echo ""; dnsrecon -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',network-wired
 
 ^tag(web)
 ^sep(Análisis Web)
-Httpx,x-terminal-emulator -e "httpx -h",network-workgroup
-WhatWeb,x-terminal-emulator -e "whatweb -h",network-workgroup
+Httpx,lxterm -title "Httpx" -e bash -c 'echo "=== HTTPX ==="; echo "Uso: httpx -l urls.txt -title -status-code"; echo ""; /home/farosint/go/bin/httpx -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash --rcfile <(echo "export PATH=/home/farosint/go/bin:$PATH")',network-workgroup
+WhatWeb,lxterm -title "WhatWeb" -e bash -c 'echo "=== WHATWEB ==="; echo "Uso: whatweb dominio.com"; echo ""; whatweb -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',network-workgroup
+Nikto,lxterm -title "Nikto" -e bash -c 'echo "=== NIKTO ==="; echo "Uso: nikto -h https://dominio.com"; echo ""; perl /home/farosint/tools/nikto/program/nikto.pl -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',network-workgroup
+Gobuster,lxterm -title "Gobuster" -e bash -c 'echo "=== GOBUSTER ==="; echo "Uso: gobuster dir -u https://dominio.com -w wordlist.txt"; echo ""; gobuster -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',network-workgroup
 
 ^tag(ports)
 ^sep(Puertos & Servicios)
-Rustscan,x-terminal-emulator -e "rustscan -h",security-high
-Nmap,x-terminal-emulator -e "nmap --help",security-high
+Nmap,lxterm -title "Nmap" -e bash -c 'echo "=== NMAP ==="; echo "Uso: nmap -sV -sC dominio.com"; echo ""; nmap --help 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',security-high
+Rustscan,lxterm -title "RustScan" -e bash -c 'echo "=== RUSTSCAN ==="; echo "Uso: rustscan -a IP --ulimit 5000"; echo ""; rustscan -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash',security-high
 
 ^tag(vulns)
 ^sep(Vulnerabilidades)
-Nuclei,x-terminal-emulator -e "nuclei -h",security-medium
-Vulnerability Matcher,x-terminal-emulator -e "echo 'Vulnerability Matcher - CVEs'; read",security-low
-IP Reputation,x-terminal-emulator -e "echo 'IP Reputation Check'; read",security-low
+Nuclei,lxterm -title "Nuclei" -e bash -c 'echo "=== NUCLEI ==="; echo "Uso: nuclei -u https://dominio.com -severity high,critical"; echo ""; /home/farosint/go/bin/nuclei -h 2>&1 | head -30; echo ""; echo "Escribe un comando o Ctrl+C para salir"; exec bash --rcfile <(echo "export PATH=/home/farosint/go/bin:$PATH")',security-medium

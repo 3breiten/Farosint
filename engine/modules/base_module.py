@@ -48,35 +48,55 @@ class BaseModule(ABC):
         Returns:
             Dict con mapeo de comando -> ruta absoluta
         """
-        tools = ['subfinder', 'amass', 'httpx', 'nuclei', 'nmap', 'whatweb', 'theHarvester']
+        home = Path.home()
         paths = {}
 
-        # Rutas comunes donde buscar (en orden de prioridad)
-        # IMPORTANTE: go/bin primero para herramientas OSINT
-        search_paths = [
-            Path.home() / 'go' / 'bin',
-            Path.home() / 'FAROSINT' / 'bin',
-            Path('/usr/local/bin'),
-            Path('/usr/bin'),
-            Path('/bin'),
-            Path.home() / '.local' / 'bin'  # Última prioridad (puede tener httpx de Python)
-        ]
+        # Rutas EXACTAS conocidas para cada herramienta (orden de prioridad)
+        # Esto elimina la ambigüedad del PATH del sistema
+        tool_candidates = {
+            'subfinder': [
+                home / 'go' / 'bin' / 'subfinder',
+            ],
+            'httpx': [
+                home / 'go' / 'bin' / 'httpx',
+                # NO incluir ~/.local/bin/httpx (es el cliente HTTP de Python, no la herramienta OSINT)
+            ],
+            'nuclei': [
+                home / 'go' / 'bin' / 'nuclei',
+            ],
+            'amass': [
+                Path('/usr/local/bin/amass'),
+                home / 'go' / 'bin' / 'amass',
+            ],
+            'nmap': [
+                Path('/usr/bin/nmap'),
+            ],
+            'whatweb': [
+                Path('/usr/bin/whatweb'),
+            ],
+            'gobuster': [
+                Path('/usr/bin/gobuster'),
+            ],
+            'dnsrecon': [
+                Path('/usr/bin/dnsrecon'),
+            ],
+            'rustscan': [
+                Path('/usr/local/bin/rustscan'),
+                Path('/usr/bin/rustscan'),
+            ],
+            'theHarvester': [
+                home / 'FAROSINT' / 'bin' / 'theHarvester',
+            ],
+            'nikto': [
+                home / 'tools' / 'nikto' / 'program' / 'nikto.pl',
+            ],
+        }
 
-        for tool in tools:
-            # Buscar manualmente en las rutas comunes PRIMERO (orden de prioridad)
-            found = False
-            for search_path in search_paths:
-                candidate = search_path / tool
+        for tool, candidates in tool_candidates.items():
+            for candidate in candidates:
                 if candidate.exists() and os.access(candidate, os.X_OK):
                     paths[tool] = str(candidate)
-                    found = True
                     break
-
-            # Si no se encontró manualmente, intentar con shutil.which como fallback
-            if not found:
-                tool_path = shutil.which(tool)
-                if tool_path:
-                    paths[tool] = tool_path
 
         return paths
 
@@ -90,7 +110,11 @@ class BaseModule(ABC):
         Returns:
             Ruta absoluta o el nombre original si no se encuentra
         """
-        return self.tool_paths.get(tool_name, tool_name)
+        path = self.tool_paths.get(tool_name)
+        if path is None:
+            self.log(f"Herramienta '{tool_name}' no encontrada en rutas conocidas", "WARNING")
+            return tool_name
+        return path
     
     @abstractmethod
     def run(self, target, **kwargs):

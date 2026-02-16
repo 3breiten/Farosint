@@ -21,7 +21,7 @@
         
         <item label="⌨️ Modo CLI (Terminal)">
             <action name="Execute">
-                <command>x-terminal-emulator -e /usr/local/bin/farosint-cli</command>
+                <command>lxterm -e /usr/local/bin/farosint-cli</command>
             </action>
         </item>
         
@@ -31,22 +31,22 @@
         <menu id="farosint-recon" label="📡 Reconocimiento">
             <item label="Subfinder">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; subfinder -d $d -all; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Dominio: " d; /home/farosint/go/bin/subfinder -d $d -all; read'</command>
                 </action>
             </item>
             <item label="Amass">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; amass enum -d $d; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Dominio: " d; /usr/local/bin/amass enum -d $d; read'</command>
                 </action>
             </item>
             <item label="TheHarvester">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Dominio: " d; theHarvester -d $d -b all; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Dominio: " d; /home/farosint/FAROSINT/bin/theHarvester -d $d -b all; read'</command>
                 </action>
             </item>
             <item label="Shodan">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Query: " q; shodan search "$q"; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Query: " q; shodan search "$q"; read'</command>
                 </action>
             </item>
         </menu>
@@ -55,17 +55,17 @@
         <menu id="farosint-web" label="🌐 Análisis Web">
             <item label="Httpx">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; echo $u | httpx -status-code -title; read'</command>
+                    <command>lxterm -e bash -c 'read -p "URL: " u; echo $u | /home/farosint/go/bin/httpx -status-code -title; read'</command>
                 </action>
             </item>
             <item label="WhatWeb">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; whatweb $u -v; read'</command>
+                    <command>lxterm -e bash -c 'read -p "URL: " u; whatweb $u -v; read'</command>
                 </action>
             </item>
             <item label="Wafw00f">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; wafw00f $u; read'</command>
+                    <command>lxterm -e bash -c 'read -p "URL: " u; wafw00f $u; read'</command>
                 </action>
             </item>
         </menu>
@@ -74,17 +74,17 @@
         <menu id="farosint-portscan" label="🔍 Escaneo Puertos">
             <item label="Nmap Quick (Top 100)">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; sudo nmap -F $t; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Target: " t; sudo nmap -F $t; read'</command>
                 </action>
             </item>
             <item label="Nmap Full">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; sudo nmap -p- $t; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Target: " t; sudo nmap -p- $t; read'</command>
                 </action>
             </item>
             <item label="Nmap Custom">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Target: " t; read -p "Puertos: " p; sudo nmap -p $p $t; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Target: " t; read -p "Puertos: " p; sudo nmap -p $p $t; read'</command>
                 </action>
             </item>
         </menu>
@@ -93,17 +93,17 @@
         <menu id="farosint-vuln" label="🛡️ Vulnerabilidades">
             <item label="Nuclei Full">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; nuclei -u $u; read'</command>
+                    <command>lxterm -e bash -c 'read -p "URL: " u; /home/farosint/go/bin/nuclei -u $u; read'</command>
                 </action>
             </item>
             <item label="Nuclei Critical">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "URL: " u; nuclei -u $u -s critical,high; read'</command>
+                    <command>lxterm -e bash -c 'read -p "URL: " u; /home/farosint/go/bin/nuclei -u $u -s critical,high; read'</command>
                 </action>
             </item>
             <item label="SearchSploit">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'read -p "Query: " q; searchsploit "$q"; read'</command>
+                    <command>lxterm -e bash -c 'read -p "Query: " q; searchsploit "$q"; read'</command>
                 </action>
             </item>
         </menu>
@@ -119,17 +119,17 @@
             </item>
             <item label="Actualizar Nuclei">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'nuclei -update-templates; read'</command>
+                    <command>lxterm -e bash -c '/home/farosint/go/bin/nuclei -update-templates; read'</command>
                 </action>
             </item>
             <item label="Ver Estado Dashboard">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'farosint status; read'</command>
+                    <command>lxterm -e bash -c 'farosint status; read'</command>
                 </action>
             </item>
             <item label="Detener Dashboard">
                 <action name="Execute">
-                    <command>x-terminal-emulator -e bash -c 'farosint stop; read'</command>
+                    <command>lxterm -e bash -c 'farosint stop; read'</command>
                 </action>
             </item>
         </menu>
@@ -142,7 +142,7 @@
     <menu id="applications-menu" label="Applications">
         <item label="Terminal">
             <action name="Execute">
-                <command>x-terminal-emulator</command>
+                <command>lxterm</command>
             </action>
         </item>
         <item label="File Manager">
