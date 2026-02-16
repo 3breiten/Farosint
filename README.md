@@ -1,5 +1,7 @@
 # Farosint
 
+> Version 1.0.0
+
 **OSINT & Attack Surface Analysis Framework**
 
 Farosint is a web-based platform for automated reconnaissance and attack surface mapping. It orchestrates multiple security tools through an intuitive dashboard, providing a unified view of targets with interactive visualizations and professional PDF reporting.
