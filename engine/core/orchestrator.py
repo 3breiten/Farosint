@@ -366,8 +366,11 @@ class FAROSINTOrchestrator:
             else:
                 print("[Pipeline] Todos los hosts son CDN/WAF - omitiendo Nmap")
 
-            # Nikto y Gobuster en URLs NO-CDN (WAF causa falsos positivos masivos)
+            # CVE lookup por versión de servicio (después de Nmap)
             self.worker_pool.wait_all()
+            self._run_service_cve_lookup()
+
+            # Nikto y Gobuster en URLs NO-CDN (WAF causa falsos positivos masivos)
             non_cdn_urls = self._get_non_cdn_urls(alive_urls)
             if non_cdn_urls:
                 self._report_progress("Escaneo Web", 80, "Analizando servicios web con Nikto y Gobuster")
@@ -542,6 +545,9 @@ class FAROSINTOrchestrator:
 
             self.worker_pool.wait_all()
             self._report_progress("Escaneo de Puertos", 75, "Escaneo de puertos completado")
+
+            # CVE lookup por versión de servicio (después de Nmap)
+            self._run_service_cve_lookup()
 
             # Fase 4: Nuclei + Nikto + Gobuster en URLs activas (paralelo)
             print(f"\n[Fase 4] Detección de vulnerabilidades web")
@@ -1071,6 +1077,82 @@ class FAROSINTOrchestrator:
             self.scan_results['ip_reputation'].extend(results.get('ips', []))
 
         return results
+
+    def _run_service_cve_lookup(self):
+        """
+        Buscar CVEs para servicios detectados por Nmap en escaneos de dominio.
+        Extrae producto/versión del output de Nmap y consulta NVD.
+        """
+        services = []
+        for host, port_data in self.scan_results.get('ports', {}).items():
+            hosts_list = port_data.get('hosts', []) if isinstance(port_data, dict) else []
+            for host_info in hosts_list:
+                for port in host_info.get('ports', []):
+                    product = port.get('product', '')
+                    version = port.get('version', '')
+                    if product and version:
+                        services.append({
+                            'name': product,
+                            'version': version,
+                            'port': port.get('port'),
+                            'host': host,
+                        })
+
+        if not services:
+            print("[Pipeline] No se detectaron servicios con versión - omitiendo CVE lookup")
+            return
+
+        # Deduplicar por producto+versión (no buscar lo mismo 2 veces)
+        seen = set()
+        unique_services = []
+        for svc in services:
+            key = f"{svc['name']}:{svc['version']}"
+            if key not in seen:
+                seen.add(key)
+                unique_services.append(svc)
+
+        print(f"\n[Fase CVE] Buscando vulnerabilidades para {len(unique_services)} servicios con versión detectada")
+        for svc in unique_services:
+            print(f"  → {svc['name']} {svc['version']} (puerto {svc['port']})")
+
+        self._report_progress("CVE Lookup", 90, f"Buscando CVEs para {len(unique_services)} servicios")
+
+        results = self._run_vuln_matcher(unique_services)
+
+        # Convertir resultados de VulnMatcher al formato estándar de vulnerabilidades
+        if results and results.get('total_cves', 0) > 0:
+            with self.lock:
+                for svc_result in results.get('services', []):
+                    svc_name = svc_result.get('name', '')
+                    svc_version = svc_result.get('version', '')
+                    svc_port = svc_result.get('port', '')
+
+                    # Encontrar el host original para este servicio
+                    svc_host = None
+                    for svc in services:
+                        if svc['name'] == svc_name and svc['version'] == svc_version:
+                            svc_host = svc.get('host', '')
+                            break
+
+                    for cve in svc_result.get('cves', []):
+                        severity = cve.get('severity', 'medium').lower()
+                        self.scan_results['vulnerabilities'].append({
+                            'name': f"{cve.get('id', '')} - {svc_name} {svc_version}",
+                            'severity': severity,
+                            'host': svc_host or '',
+                            'matched_at': f"{svc_host}:{svc_port}" if svc_host else '',
+                            'cve': cve.get('id', ''),
+                            'cvss_score': cve.get('cvss_score', 0.0),
+                            'template': 'nvd-service-cve',
+                            'description': cve.get('description', ''),
+                            'tags': ['nvd', 'service-version', svc_name.lower()],
+                            'references': {'nvd': cve.get('url', '')},
+                            'remediation': {'steps': [f'Actualizar {svc_name} a la última versión', f'Aplicar parches para {cve.get("id", "")}']}
+                        })
+
+            print(f"  [CVE Lookup] {results['total_cves']} CVEs encontrados para servicios detectados")
+        else:
+            print("  [CVE Lookup] No se encontraron CVEs para los servicios detectados")
 
     # =============================
     # Utilidades
