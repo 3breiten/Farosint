@@ -138,14 +138,24 @@ class GobusterModule(BaseModule):
         return findings
 
     def _classify_path(self, path, status):
-        """Clasificar severidad del path encontrado"""
+        """Clasificar severidad del path encontrado según accesibilidad real"""
         path_lower = path.lower()
-        if any(k in path_lower for k in ['.git', '.env', 'backup', 'db', 'sql', 'config', '.htpasswd', 'passwd']):
-            return 'high'
-        if any(k in path_lower for k in ['admin', 'phpmyadmin', 'shell', 'cmd', 'upload', 'webshell', 'console']):
+
+        # Paths sensibles — solo high si son accesibles (200), low si 403/bloqueado
+        sensitive = ['.git', '.env', 'backup', 'db', 'sql', '.htpasswd', 'passwd', 'web.config']
+        if any(k in path_lower for k in sensitive):
+            return 'high' if status == 200 else 'low'
+
+        dangerous = ['shell', 'cmd', 'webshell', 'upload']
+        if any(k in path_lower for k in dangerous):
             return 'high' if status == 200 else 'medium'
-        if any(k in path_lower for k in ['login', 'api', 'dashboard', 'wp-admin', 'phpinfo', 'info.php']):
-            return 'medium'
+
+        if any(k in path_lower for k in ['admin', 'phpmyadmin', 'console', 'phpinfo', 'info.php']):
+            return 'medium' if status == 200 else 'low'
+
+        if any(k in path_lower for k in ['login', 'api', 'dashboard', 'wp-admin']):
+            return 'low'
+
         return 'low'
 
     def _severity_to_cvss(self, severity):

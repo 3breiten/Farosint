@@ -103,39 +103,62 @@ class NiktoModule(BaseModule):
         # Fallback: parseo de texto
         return self._parse_text(stdout, target_url)
 
+    # Líneas de Nikto que son informativas/status, no vulnerabilidades
+    _NOISE_PATTERNS = [
+        'target ip:', 'target hostname:', 'target port:', 'start time:',
+        'end time:', 'host(s) tested', 'requests:', 'error(s) and',
+        'no cgi directories found', 'ssl info:', 'server:',
+        'multiple ips found', 'root page / redirects to', 'multiple index files found',
+        'scan terminated', 'server is using a wildcard certificate',
+        'no banner retrieved', 'ip address found in the',
+    ]
+
+    def _is_noise(self, desc):
+        """Detectar si la línea es informativa (no una vulnerabilidad real)"""
+        desc_lower = desc.lower()
+        return any(p in desc_lower for p in self._NOISE_PATTERNS)
+
     def _parse_text(self, stdout, target_url):
         """Parseo de texto del output de Nikto"""
         findings = []
         for line in stdout.split('\n'):
             if line.startswith('+ ') and len(line) > 3:
                 desc = line[2:].strip()
-                if desc and not desc.startswith('Target') and not desc.startswith('Start'):
-                    severity = self._classify_severity(desc, '')
-                    findings.append({
-                        'name': f"Nikto: {desc[:80]}",
-                        'severity': severity,
-                        'host': target_url,
-                        'matched_at': target_url,
-                        'cve': self._extract_cve(desc),
-                        'cvss_score': self._severity_to_cvss(severity),
-                        'template': 'nikto-finding',
-                        'description': desc,
-                        'tags': ['nikto', 'web'],
-                        'references': {},
-                        'remediation': {'steps': ['Revisar configuración del servidor web']}
-                    })
+                if not desc or desc.startswith('Target') or desc.startswith('Start'):
+                    continue
+                if self._is_noise(desc):
+                    continue
+                severity = self._classify_severity(desc, '')
+                findings.append({
+                    'name': f"Nikto: {desc[:80]}",
+                    'severity': severity,
+                    'host': target_url,
+                    'matched_at': target_url,
+                    'cve': self._extract_cve(desc),
+                    'cvss_score': self._severity_to_cvss(severity),
+                    'template': 'nikto-finding',
+                    'description': desc,
+                    'tags': ['nikto', 'web'],
+                    'references': {},
+                    'remediation': {'steps': ['Revisar configuración del servidor web']}
+                })
         self.log(f"Nikto (texto): {len(findings)} issues")
         return findings
 
     def _classify_severity(self, description, osvdb_id):
         """Clasificar severidad basada en descripción"""
         desc_lower = description.lower()
-        if any(k in desc_lower for k in ['rce', 'remote code', 'command injection', 'shell', 'upload']):
+        if any(k in desc_lower for k in ['rce', 'remote code', 'command injection']):
             return 'critical'
-        if any(k in desc_lower for k in ['xss', 'sql injection', 'traversal', 'lfi', 'rfi', 'csrf', 'authentication']):
+        if any(k in desc_lower for k in ['xss', 'sql injection', 'traversal', 'lfi', 'rfi', 'csrf']):
             return 'high'
-        if any(k in desc_lower for k in ['information disclosure', 'debug', 'backup', 'config', 'password', 'admin']):
+        if any(k in desc_lower for k in [
+            'requires authentication', 'no creds found',
+            'information disclosure', 'debug', 'backup', 'password', 'admin'
+        ]):
             return 'medium'
+        if any(k in desc_lower for k in ['header', 'missing', 'cookie', 'outdated', 'appears to be']):
+            return 'low'
         return 'low'
 
     def _extract_cve(self, description):
