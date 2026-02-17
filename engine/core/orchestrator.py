@@ -366,27 +366,28 @@ class FAROSINTOrchestrator:
             else:
                 print("[Pipeline] Todos los hosts son CDN/WAF - omitiendo Nmap")
 
-            # Nikto y Gobuster en las URLs activas
+            # Nikto y Gobuster en URLs NO-CDN (WAF causa falsos positivos masivos)
             self.worker_pool.wait_all()
-            self._report_progress("Escaneo Web", 80, "Analizando servicios web con Nikto y Gobuster")
-            for url in alive_urls[:5]:  # Limitar a 5 URLs para no demorar demasiado
-                url_str = url.get('url', '') if isinstance(url, dict) else str(url)
-                if url_str and _HAS_NIKTO:
-                    self.worker_pool.submit(
-                        name=f"Nikto-{url_str}",
-                        function=self._run_nikto,
-                        args=[url_str],
-                        timeout=180,
-                        priority=5
-                    )
-                if url_str and _HAS_GOBUSTER:
-                    self.worker_pool.submit(
-                        name=f"Gobuster-{url_str}",
-                        function=self._run_gobuster,
-                        args=[url_str],
-                        timeout=120,
-                        priority=5
-                    )
+            non_cdn_urls = self._get_non_cdn_urls(alive_urls)
+            if non_cdn_urls:
+                self._report_progress("Escaneo Web", 80, "Analizando servicios web con Nikto y Gobuster")
+                for url_str in non_cdn_urls[:5]:
+                    if _HAS_NIKTO:
+                        self.worker_pool.submit(
+                            name=f"Nikto-{url_str}",
+                            function=self._run_nikto,
+                            args=[url_str],
+                            timeout=180,
+                            priority=5
+                        )
+                    if _HAS_GOBUSTER:
+                        self.worker_pool.submit(
+                            name=f"Gobuster-{url_str}",
+                            function=self._run_gobuster,
+                            args=[url_str],
+                            timeout=120,
+                            priority=5
+                        )
             self.worker_pool.wait_all()
         else:
             print("[Pipeline] No hay URLs activas - omitiendo escaneo de puertos")
@@ -545,28 +546,30 @@ class FAROSINTOrchestrator:
             # Fase 4: Nuclei + Nikto + Gobuster en URLs activas (paralelo)
             print(f"\n[Fase 4] Detección de vulnerabilidades web")
 
-            # Extraer URLs
-            target_urls = [url.get('url') for url in alive_urls if url.get('url')]
+            # Extraer URLs (todas para Nuclei, sin CDN para Nikto/Gobuster)
+            all_urls = [url.get('url') for url in alive_urls if url.get('url')]
+            non_cdn_urls = self._get_non_cdn_urls(alive_urls)
 
-            if len(target_urls) > self.config['limits']['max_urls']:
+            if len(all_urls) > self.config['limits']['max_urls']:
                 print(f"[Pipeline] Limitando a {self.config['limits']['max_urls']} URLs para análisis")
-                target_urls = target_urls[:self.config['limits']['max_urls']]
+                all_urls = all_urls[:self.config['limits']['max_urls']]
 
-            if target_urls:
-                self._report_progress("Vulnerabilidades", 80, f"Escaneando {len(target_urls)} URLs con Nuclei, Nikto y Gobuster")
+            if all_urls:
+                self._report_progress("Vulnerabilidades", 80, f"Escaneando {len(all_urls)} URLs con Nuclei" +
+                    (f", {len(non_cdn_urls)} con Nikto/Gobuster" if non_cdn_urls else ""))
 
-                # Nuclei (todas las URLs)
+                # Nuclei (todas las URLs — funciona bien con CDN/WAF)
                 self.worker_pool.submit(
                     name="Nuclei",
                     function=self._run_nuclei,
-                    args=[target_urls],
+                    args=[all_urls],
                     timeout=self.config['timeouts']['nuclei'],
                     priority=self.config['priorities']['nuclei']
                 )
 
-                # Nikto (hasta 10 URLs en full scan)
-                if _HAS_NIKTO:
-                    for url_str in target_urls[:10]:
+                # Nikto solo en URLs NO-CDN (WAF causa falsos positivos masivos)
+                if _HAS_NIKTO and non_cdn_urls:
+                    for url_str in non_cdn_urls[:10]:
                         self.worker_pool.submit(
                             name=f"Nikto-{url_str}",
                             function=self._run_nikto,
@@ -575,9 +578,9 @@ class FAROSINTOrchestrator:
                             priority=5
                         )
 
-                # Gobuster (hasta 10 URLs en full scan)
-                if _HAS_GOBUSTER:
-                    for url_str in target_urls[:10]:
+                # Gobuster solo en URLs NO-CDN
+                if _HAS_GOBUSTER and non_cdn_urls:
+                    for url_str in non_cdn_urls[:10]:
                         self.worker_pool.submit(
                             name=f"Gobuster-{url_str}",
                             function=self._run_gobuster,
@@ -1072,6 +1075,35 @@ class FAROSINTOrchestrator:
     # =============================
     # Utilidades
     # =============================
+
+    def _get_non_cdn_urls(self, alive_urls):
+        """
+        Filtrar URLs activas excluyendo hosts detrás de CDN/WAF.
+
+        Los WAF (Imperva, Cloudflare, etc.) responden a cualquier request,
+        causando que Nikto y Gobuster reporten cientos de falsos positivos
+        (backups inexistentes, headers del WAF, etc.).
+
+        Args:
+            alive_urls: Lista de resultados httpx
+
+        Returns:
+            Lista de URL strings que NO están detrás de CDN/WAF
+        """
+        non_cdn = []
+        cdn_skipped = 0
+        for url in alive_urls:
+            if url.get('cdn', False):
+                cdn_skipped += 1
+                continue
+            url_str = url.get('url', '')
+            if url_str:
+                non_cdn.append(url_str)
+
+        if cdn_skipped:
+            print(f"[Pipeline] {cdn_skipped} URLs CDN/WAF excluidas de Nikto/Gobuster")
+
+        return non_cdn
 
     def _filter_nmap_targets(self, alive_urls):
         """

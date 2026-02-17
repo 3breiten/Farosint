@@ -111,6 +111,13 @@ class NiktoModule(BaseModule):
         'multiple ips found', 'root page / redirects to', 'multiple index files found',
         'scan terminated', 'server is using a wildcard certificate',
         'no banner retrieved', 'ip address found in the',
+        # Nikto genera permutaciones del hostname para buscar backups.
+        # Son probes especulativos, no hallazgos confirmados.
+        'potentially interesting',
+        # Headers custom/CDN que no son vulnerabilidades
+        'uncommon header',
+        # Info SSL/alt-svc que no es una vuln
+        'an alt-svc header was found',
     ]
 
     def _is_noise(self, desc):
@@ -154,7 +161,7 @@ class NiktoModule(BaseModule):
             return 'high'
         if any(k in desc_lower for k in [
             'requires authentication', 'no creds found',
-            'information disclosure', 'debug', 'backup', 'password', 'admin'
+            'information disclosure', 'debug', 'password',
         ]):
             return 'medium'
         if any(k in desc_lower for k in ['header', 'missing', 'cookie', 'outdated', 'appears to be']):
