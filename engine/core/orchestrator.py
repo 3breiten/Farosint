@@ -337,26 +337,35 @@ class FAROSINTOrchestrator:
         self.scan_results['alive_urls'] = alive_urls
         self._report_progress("Verificación Web", 55, f"Encontradas {len(alive_urls)} URLs activas")
 
-        # Fase 3: Nmap quick en IPs únicas (solo si hay URLs activas)
+        # Fase 3: Nmap quick (solo si hay URLs activas)
         if alive_urls:
-            unique_ips = list(set([url.get('host', '').split(':')[0] for url in alive_urls if url.get('host')]))
+            # Filtrar CDN/WAF y deduplicar por IP
+            nmap_targets, cdn_hosts, ip_to_hostnames = self._filter_nmap_targets(alive_urls)
 
-            if len(unique_ips) > self.config['limits']['max_ips']:
-                print(f"[Pipeline] Limitando a {self.config['limits']['max_ips']} IPs para Nmap")
-                unique_ips = unique_ips[:self.config['limits']['max_ips']]
+            # Guardar info CDN en resultados
+            if cdn_hosts:
+                self.scan_results['cdn_hosts'] = cdn_hosts
 
-            print(f"\n[Fase 3] Escaneando {len(unique_ips)} IPs con Nmap (quick)")
-            self._report_progress("Escaneo de Puertos", 65, f"Escaneando {len(unique_ips)} IPs con Nmap")
+            if len(nmap_targets) > self.config['limits']['max_ips']:
+                print(f"[Pipeline] Limitando a {self.config['limits']['max_ips']} hosts para Nmap")
+                nmap_targets = nmap_targets[:self.config['limits']['max_ips']]
 
-            for ip in unique_ips:
-                self.worker_pool.submit(
-                    name=f"Nmap-{ip}",
-                    function=self._run_nmap,
-                    args=[ip],
-                    kwargs={'scan_type': 'quick'},
-                    timeout=self.config['timeouts']['nmap_quick'],
-                    priority=self.config['priorities']['nmap']
-                )
+            if nmap_targets:
+                print(f"\n[Fase 3] Escaneando {len(nmap_targets)} hosts con Nmap (quick)")
+                self._report_progress("Escaneo de Puertos", 65, f"Escaneando {len(nmap_targets)} hosts con Nmap")
+
+                for target_host in nmap_targets:
+                    self.worker_pool.submit(
+                        name=f"Nmap-{target_host}",
+                        function=self._run_nmap,
+                        args=[target_host],
+                        kwargs={'scan_type': 'quick'},
+                        timeout=self.config['timeouts']['nmap_quick'],
+                        priority=self.config['priorities']['nmap']
+                    )
+            else:
+                print("[Pipeline] Todos los hosts son CDN/WAF - omitiendo Nmap")
+
             # Nikto y Gobuster en las URLs activas
             self.worker_pool.wait_all()
             self._report_progress("Escaneo Web", 80, "Analizando servicios web con Nikto y Gobuster")
@@ -501,26 +510,34 @@ class FAROSINTOrchestrator:
                 priority=3
             )
 
-        # Fase 3: Nmap full en IPs únicas (solo si hay URLs activas)
+        # Fase 3: Nmap full (solo si hay URLs activas)
         if alive_urls:
-            unique_ips = list(set([url.get('host', '').split(':')[0] for url in alive_urls if url.get('host')]))
+            # Filtrar CDN/WAF y deduplicar por IP
+            nmap_targets, cdn_hosts, ip_to_hostnames = self._filter_nmap_targets(alive_urls)
 
-            if len(unique_ips) > self.config['limits']['max_ips']:
-                print(f"[Pipeline] Limitando a {self.config['limits']['max_ips']} IPs para Nmap")
-                unique_ips = unique_ips[:self.config['limits']['max_ips']]
+            # Guardar info CDN en resultados
+            if cdn_hosts:
+                self.scan_results['cdn_hosts'] = cdn_hosts
 
-            print(f"\n[Fase 3] Escaneo de puertos ({len(unique_ips)} IPs)")
-            self._report_progress("Escaneo de Puertos", 60, f"Escaneando {len(unique_ips)} IPs con Nmap")
+            if len(nmap_targets) > self.config['limits']['max_ips']:
+                print(f"[Pipeline] Limitando a {self.config['limits']['max_ips']} hosts para Nmap")
+                nmap_targets = nmap_targets[:self.config['limits']['max_ips']]
 
-            for ip in unique_ips:
-                self.worker_pool.submit(
-                    name=f"Nmap-{ip}",
-                    function=self._run_nmap,
-                    args=[ip],
-                    kwargs={'scan_type': 'full'},
-                    timeout=self.config['timeouts'].get('nmap_full', 1800),
-                    priority=self.config['priorities']['nmap']
-                )
+            if nmap_targets:
+                print(f"\n[Fase 3] Escaneo de puertos ({len(nmap_targets)} hosts, excluidos {len(cdn_hosts)} CDN/WAF)")
+                self._report_progress("Escaneo de Puertos", 60, f"Escaneando {len(nmap_targets)} hosts con Nmap")
+
+                for target_host in nmap_targets:
+                    self.worker_pool.submit(
+                        name=f"Nmap-{target_host}",
+                        function=self._run_nmap,
+                        args=[target_host],
+                        kwargs={'scan_type': 'full'},
+                        timeout=self.config['timeouts'].get('nmap_full', 1800),
+                        priority=self.config['priorities']['nmap']
+                    )
+            else:
+                print("[Pipeline] Todos los hosts son CDN/WAF - omitiendo Nmap")
 
             self.worker_pool.wait_all()
             self._report_progress("Escaneo de Puertos", 75, "Escaneo de puertos completado")
@@ -1055,6 +1072,83 @@ class FAROSINTOrchestrator:
     # =============================
     # Utilidades
     # =============================
+
+    def _filter_nmap_targets(self, alive_urls):
+        """
+        Filtrar targets para Nmap: excluir CDN/WAF y deduplicar por IP.
+
+        Los hosts detrás de CDN/WAF (ej. Imperva, Cloudflare) reportan cientos de
+        puertos abiertos que son de la infraestructura del WAF, no del servidor real.
+        Httpx ya detecta esto con los campos cdn/cdn_name/cdn_type.
+
+        Args:
+            alive_urls: Lista de resultados httpx (dicts con host, a, cdn, etc.)
+
+        Returns:
+            Tuple de (nmap_targets, cdn_hosts, ip_to_hostnames)
+            - nmap_targets: lista de hostnames únicos por IP, sin CDN/WAF
+            - cdn_hosts: lista de hostnames detrás de CDN/WAF (excluidos de nmap)
+            - ip_to_hostnames: dict {ip: [hostnames]} para mapeo inverso
+        """
+        cdn_hosts = []
+        non_cdn_urls = []
+
+        for url in alive_urls:
+            host = url.get('host', '').split(':')[0]
+            if not host:
+                continue
+
+            is_cdn = url.get('cdn', False)
+            cdn_type = url.get('cdn_type', '')
+
+            if is_cdn:
+                cdn_name = url.get('cdn_name', 'unknown')
+                cdn_hosts.append({
+                    'host': host,
+                    'cdn_name': cdn_name,
+                    'cdn_type': cdn_type,
+                    'status_code': url.get('status_code')
+                })
+                print(f"  ⚠ {host} → CDN/WAF ({cdn_name}) - excluido de Nmap")
+            else:
+                non_cdn_urls.append(url)
+
+        # Deduplicar por IP resolvida: solo escanear cada IP una vez
+        ip_to_hostnames = {}
+        seen_ips = set()
+        nmap_targets = []
+
+        for url in non_cdn_urls:
+            host = url.get('host', '').split(':')[0]
+            # httpx devuelve IPs en el campo 'a' (lista) o 'host' si ya es IP
+            ips = url.get('a', [])
+            if not ips:
+                # Fallback: usar el host directamente
+                nmap_targets.append(host)
+                continue
+
+            # Tomar la primera IP del registro A
+            primary_ip = ips[0] if isinstance(ips, list) else ips
+
+            # Registrar mapeo IP -> hostnames
+            if primary_ip not in ip_to_hostnames:
+                ip_to_hostnames[primary_ip] = []
+            ip_to_hostnames[primary_ip].append(host)
+
+            # Solo agregar si esta IP no fue vista antes
+            if primary_ip not in seen_ips:
+                seen_ips.add(primary_ip)
+                nmap_targets.append(host)
+            else:
+                existing_host = ip_to_hostnames[primary_ip][0]
+                print(f"  ⚠ {host} → misma IP que {existing_host} ({primary_ip}) - deduplicado")
+
+        if cdn_hosts:
+            print(f"[Pipeline] {len(cdn_hosts)} hosts CDN/WAF excluidos de Nmap")
+        if len(non_cdn_urls) > len(nmap_targets):
+            print(f"[Pipeline] {len(non_cdn_urls) - len(nmap_targets)} hosts deduplicados por IP compartida")
+
+        return nmap_targets, cdn_hosts, ip_to_hostnames
 
     def _prioritize_subdomains(self, subdomains):
         """

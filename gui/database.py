@@ -77,7 +77,7 @@ class DatabaseManager:
                 )
             ''')
             
-            # Tabla de servicios/puertos
+            # Tabla de servicios/puertos (UNIQUE evita duplicados por misma IP escaneada desde múltiples hostnames)
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS services (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,7 +89,8 @@ class DatabaseManager:
                     product TEXT,
                     version TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (scan_id) REFERENCES scans(scan_id)
+                    FOREIGN KEY (scan_id) REFERENCES scans(scan_id),
+                    UNIQUE(scan_id, ip, port, protocol)
                 )
             ''')
             
@@ -129,6 +130,22 @@ class DatabaseManager:
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_services_scan ON services(scan_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_vulns_scan ON vulnerabilities(scan_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_vulns_severity ON vulnerabilities(severity)')
+
+            # Migración: deduplicar servicios existentes y agregar UNIQUE index
+            try:
+                cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_services_unique ON services(scan_id, ip, port, protocol)')
+            except Exception:
+                # Si falla, hay duplicados existentes: limpiar y reintentar
+                cursor.execute('''
+                    DELETE FROM services WHERE id NOT IN (
+                        SELECT MIN(id) FROM services GROUP BY scan_id, ip, port, protocol
+                    )
+                ''')
+                deleted = cursor.rowcount
+                if deleted > 0:
+                    print(f"[DB] Migración: eliminados {deleted} servicios duplicados")
+                conn.commit()
+                cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_services_unique ON services(scan_id, ip, port, protocol)')
     
     # =============================
     # Métodos para Scans
@@ -271,11 +288,11 @@ class DatabaseManager:
     # =============================
     
     def add_service(self, scan_id, ip, port, protocol='tcp', service=None, product=None, version=None):
-        """Agregar servicio detectado"""
+        """Agregar servicio detectado (ignora duplicados por misma IP+puerto+protocolo)"""
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                '''INSERT INTO services (scan_id, ip, port, protocol, service, product, version)
+                '''INSERT OR IGNORE INTO services (scan_id, ip, port, protocol, service, product, version)
                    VALUES (?, ?, ?, ?, ?, ?, ?)''',
                 (scan_id, ip, port, protocol, service, product, version)
             )
