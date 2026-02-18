@@ -166,11 +166,25 @@ class VulnMatcherModule(BaseModule):
             return cves
 
         except requests.Timeout:
-            self.log(f"Timeout consultando NVD para {product_name}", "WARNING")
+            self.log(f"Timeout consultando NVD para {product_name} (30s)", "WARNING")
+            print(f"  [CVE Lookup] WARNING: Timeout en NVD API para {product_name}")
+            return []
+
+        except requests.ConnectionError as e:
+            # DNS falla, red caída, etc.
+            err_msg = str(e)
+            if 'name resolution' in err_msg.lower() or 'dns' in err_msg.lower():
+                self.log(f"NVD API inaccesible (DNS) - no se pueden buscar CVEs para {product_name}", "ERROR")
+                print(f"  [CVE Lookup] ERROR: No se puede resolver services.nvd.nist.gov - "
+                      f"CVE lookup requiere acceso a Internet")
+            else:
+                self.log(f"Error de conexión a NVD API: {err_msg[:100]}", "ERROR")
+                print(f"  [CVE Lookup] ERROR: No se puede conectar a NVD API para {product_name}")
             return []
 
         except Exception as e:
             self.log(f"Error buscando CVEs: {str(e)}", "ERROR")
+            print(f"  [CVE Lookup] ERROR: {str(e)[:100]}")
             return []
 
     def _parse_cve(self, vuln_data):

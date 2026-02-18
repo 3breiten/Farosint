@@ -1175,7 +1175,8 @@ class FAROSINTOrchestrator:
         non_cdn = []
         cdn_skipped = 0
         for url in alive_urls:
-            if url.get('cdn', False):
+            is_cdn, _ = self._is_cdn_host(url)
+            if is_cdn:
                 cdn_skipped += 1
                 continue
             url_str = url.get('url', '')
@@ -1187,13 +1188,64 @@ class FAROSINTOrchestrator:
 
         return non_cdn
 
+    def _is_cdn_host(self, url_data):
+        """
+        Detectar si un host está detrás de CDN/WAF.
+
+        Httpx detecta la mayoría con el campo 'cdn', pero a veces no marca
+        hosts que están en Cloudflare/HubSpot/Akamai. Este método complementa
+        esa detección revisando CNAME, webserver y tech.
+
+        Returns:
+            (is_cdn: bool, cdn_name: str)
+        """
+        # Detección primaria de httpx
+        if url_data.get('cdn', False):
+            return True, url_data.get('cdn_name', 'unknown')
+
+        # Detección secundaria: CNAME apunta a CDN conocido
+        cdn_cname_patterns = {
+            'cloudflare': 'cloudflare',
+            'incapdns': 'imperva',
+            'impervadns': 'imperva',
+            'akamai': 'akamai',
+            'fastly': 'fastly',
+            'cloudfront': 'aws-cloudfront',
+            'azurefd': 'azure-frontdoor',
+            'hscoscdn': 'hubspot-cdn',
+            'hubspot.net': 'hubspot-cdn',
+            'edgekey.net': 'akamai',
+            'sucuri': 'sucuri',
+        }
+
+        cnames = url_data.get('cname', [])
+        for cname in (cnames if isinstance(cnames, list) else [cnames]):
+            cname_lower = str(cname).lower()
+            for pattern, cdn_name in cdn_cname_patterns.items():
+                if pattern in cname_lower:
+                    return True, cdn_name
+
+        # Detección terciaria: webserver indica CDN
+        webserver = str(url_data.get('webserver', '')).lower()
+        if webserver == 'cloudflare':
+            return True, 'cloudflare'
+
+        # Detección por tech (lista de tecnologías detectadas por httpx)
+        techs = url_data.get('tech', [])
+        cdn_techs = {'cloudflare', 'imperva', 'akamai', 'fastly', 'sucuri',
+                     'cloudflare bot management', 'aws cloudfront'}
+        for tech in techs:
+            if str(tech).lower() in cdn_techs:
+                return True, str(tech).lower()
+
+        return False, ''
+
     def _filter_nmap_targets(self, alive_urls):
         """
         Filtrar targets para Nmap: excluir CDN/WAF y deduplicar por IP.
 
         Los hosts detrás de CDN/WAF (ej. Imperva, Cloudflare) reportan cientos de
         puertos abiertos que son de la infraestructura del WAF, no del servidor real.
-        Httpx ya detecta esto con los campos cdn/cdn_name/cdn_type.
 
         Args:
             alive_urls: Lista de resultados httpx (dicts con host, a, cdn, etc.)
@@ -1212,15 +1264,13 @@ class FAROSINTOrchestrator:
             if not host:
                 continue
 
-            is_cdn = url.get('cdn', False)
-            cdn_type = url.get('cdn_type', '')
+            is_cdn, cdn_name = self._is_cdn_host(url)
 
             if is_cdn:
-                cdn_name = url.get('cdn_name', 'unknown')
                 cdn_hosts.append({
                     'host': host,
                     'cdn_name': cdn_name,
-                    'cdn_type': cdn_type,
+                    'cdn_type': url.get('cdn_type', 'cdn'),
                     'status_code': url.get('status_code')
                 })
                 print(f"  ⚠ {host} → CDN/WAF ({cdn_name}) - excluido de Nmap")
