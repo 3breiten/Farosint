@@ -120,9 +120,9 @@ if ! id "${FAROSINT_USER}" &>/dev/null; then
     exit 1
 fi
 
-# Asegurar que esté en los grupos necesarios
-usermod -aG sudo,ssl-cert "${FAROSINT_USER}"
-log_ok "Usuario ${FAROSINT_USER} verificado, grupos actualizados (sudo, ssl-cert)"
+# Asegurar que esté en sudo (ssl-cert se agrega después de instalar paquetes)
+usermod -aG sudo "${FAROSINT_USER}"
+log_ok "Usuario ${FAROSINT_USER} verificado, agregado a sudo"
 
 # ============================================================================
 # PASO 3: PAQUETES DEL SISTEMA
@@ -174,6 +174,7 @@ log_ok "Herramientas de desarrollo (python3, gcc, git, etc.)"
 apt-get install -y -qq \
     openssh-server \
     xrdp xorgxrdp \
+    ssl-cert \
     > /dev/null 2>&1
 log_ok "Servicios (SSH, xRDP)"
 
@@ -182,6 +183,10 @@ systemctl enable ssh
 systemctl enable xrdp
 systemctl enable lightdm
 log_ok "Servicios habilitados (ssh, xrdp, lightdm)"
+
+# ssl-cert group se crea al instalar el paquete — agregar usuario ahora
+usermod -aG ssl-cert "${FAROSINT_USER}"
+log_ok "Usuario agregado al grupo ssl-cert"
 
 # ============================================================================
 # PASO 4: INSTALAR GO
@@ -221,15 +226,23 @@ su - "${FAROSINT_USER}" -c "
     export PATH=\$PATH:\$GOROOT/bin:\$GOPATH/bin
 
     echo '  Instalando subfinder...'
-    go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>/dev/null
+    go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest 2>&1 | tail -3
 
     echo '  Instalando nuclei...'
-    go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest 2>/dev/null
+    go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest 2>&1 | tail -3
 
     echo '  Instalando httpx...'
-    go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null
+    go install github.com/projectdiscovery/httpx/cmd/httpx@latest 2>&1 | tail -3
 "
-log_ok "Subfinder, Nuclei, Httpx instalados"
+
+# Verificar que quedaron instalados
+for tool in subfinder nuclei httpx; do
+    if [ -f "${FAROSINT_HOME}/go/bin/${tool}" ]; then
+        log_ok "${tool} instalado en ~/go/bin/"
+    else
+        log_warn "${tool} NO se instaló correctamente — revisar errores Go arriba"
+    fi
+done
 
 # Actualizar templates de Nuclei
 su - "${FAROSINT_USER}" -c "
@@ -281,11 +294,13 @@ fi
 # enum4linux-ng
 if [ ! -d "${TOOLS_DIR}/enum4linux-ng" ]; then
     git clone -q https://github.com/cddmp/enum4linux-ng.git "${TOOLS_DIR}/enum4linux-ng"
-    # Instalar dependencias de enum4linux-ng en el virtualenv (se hará después)
     log_ok "enum4linux-ng instalado en ${TOOLS_DIR}/enum4linux-ng"
 else
     log_ok "enum4linux-ng ya instalado"
 fi
+# Dependencias de enum4linux-ng (ldap3, impacket) — ya están en requirements.txt
+# Dependencia del sistema: samba-client
+apt-get install -y -qq samba-client > /dev/null 2>&1 || true
 
 # theHarvester (dentro del proyecto)
 THEHARVESTER_DIR="${FAROSINT_DIR}/tools/theHarvester"
@@ -297,26 +312,21 @@ else
     log_ok "theHarvester ya instalado"
 fi
 
-# RustScan (descargar binario)
-RUSTSCAN_DIR="${FAROSINT_DIR}/tools/rustscan"
-mkdir -p "${RUSTSCAN_DIR}"
-if [ ! -f "${RUSTSCAN_DIR}/rustscan" ]; then
+# RustScan (descargar .deb desde GitHub)
+if [ ! -f /usr/local/bin/rustscan ]; then
     cd /tmp
-    RUSTSCAN_URL="https://github.com/RustScan/RustScan/releases/latest/download/rustscan-2.3.0-linux_amd64.zip"
-    wget -q "${RUSTSCAN_URL}" -O rustscan.zip 2>/dev/null || {
-        # Intentar con .deb
-        wget -q "https://github.com/RustScan/RustScan/releases/download/2.3.0/rustscan_2.3.0_amd64.deb" -O rustscan.deb 2>/dev/null && {
-            dpkg -i rustscan.deb 2>/dev/null || apt-get -f install -y -qq 2>/dev/null
-            cp /usr/bin/rustscan "${RUSTSCAN_DIR}/rustscan" 2>/dev/null || true
-            rm -f rustscan.deb
-        }
-    }
-    if [ -f rustscan.zip ]; then
-        unzip -o -q rustscan.zip -d "${RUSTSCAN_DIR}" 2>/dev/null || true
-        chmod +x "${RUSTSCAN_DIR}/rustscan" 2>/dev/null || true
-        rm -f rustscan.zip
+    RUSTSCAN_DEB_URL="https://github.com/RustScan/RustScan/releases/download/2.3.0/rustscan_2.3.0_amd64.deb"
+    if wget -q "${RUSTSCAN_DEB_URL}" -O rustscan.deb 2>/dev/null; then
+        dpkg -i rustscan.deb 2>/dev/null || apt-get -f install -y -qq > /dev/null 2>&1
+        # Asegurar que está en /usr/local/bin (base_module lo busca ahí)
+        if [ -f /usr/bin/rustscan ] && [ ! -f /usr/local/bin/rustscan ]; then
+            cp /usr/bin/rustscan /usr/local/bin/rustscan
+        fi
+        rm -f rustscan.deb
+        log_ok "RustScan instalado en /usr/local/bin/rustscan"
+    else
+        log_warn "RustScan no se pudo descargar — funcionalidad reducida (Nmap cubre lo mismo)"
     fi
-    log_ok "RustScan instalado (o intento de instalación)"
 else
     log_ok "RustScan ya instalado"
 fi
@@ -495,6 +505,43 @@ chown -R "${FAROSINT_USER}:${FAROSINT_USER}" "${FAROSINT_HOME}"
 chmod 700 "${FAROSINT_HOME}/.config"
 
 log_ok "Permisos configurados"
+
+# ============================================================================
+# VERIFICACIÓN FINAL DE HERRAMIENTAS
+# ============================================================================
+
+log_step "Verificando herramientas instaladas"
+
+check_tool() {
+    local name="$1"
+    local path="$2"
+    if [ -f "$path" ] && [ -x "$path" ]; then
+        log_ok "$name → $path"
+        return 0
+    else
+        log_warn "$name NO encontrado en $path"
+        return 1
+    fi
+}
+
+check_tool "nmap"       "/usr/bin/nmap"
+check_tool "gobuster"   "/usr/bin/gobuster"
+check_tool "dnsrecon"   "/usr/bin/dnsrecon"
+check_tool "whatweb"    "/usr/bin/whatweb"
+check_tool "subfinder"  "${FAROSINT_HOME}/go/bin/subfinder"
+check_tool "httpx"      "${FAROSINT_HOME}/go/bin/httpx"
+check_tool "nuclei"     "${FAROSINT_HOME}/go/bin/nuclei"
+check_tool "amass"      "/usr/local/bin/amass"
+check_tool "nikto.pl"   "${FAROSINT_HOME}/tools/nikto/program/nikto.pl"
+check_tool "theHarvester" "${FAROSINT_DIR}/bin/theHarvester"
+[ -f /usr/local/bin/rustscan ] && log_ok "rustscan → /usr/local/bin/rustscan" || log_warn "rustscan no instalado (opcional)"
+
+# Verificar Python virtualenv
+if [ -f "${FAROSINT_DIR}/farosint-env/bin/python3" ]; then
+    log_ok "virtualenv Python → ${FAROSINT_DIR}/farosint-env"
+else
+    log_warn "Virtualenv Python NO encontrado — revisar paso 7"
+fi
 
 # ============================================================================
 # RESUMEN FINAL
