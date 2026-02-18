@@ -1009,15 +1009,15 @@ def format_datetime(value, format='%Y-%m-%d %H:%M:%S'):
 @app.template_filter('severity_badge')
 def severity_badge(severity):
     """Generar badge HTML para severidad"""
-    colors = {
-        'critical': 'danger',
-        'high': 'warning',
-        'medium': 'info',
-        'low': 'secondary',
-        'info': 'light'
+    styles = {
+        'critical': ('danger',    'white'),
+        'high':     ('warning',   'dark'),
+        'medium':   ('info',      'white'),
+        'low':      ('secondary', 'white'),
+        'info':     ('light',     'dark'),
     }
-    color = colors.get(severity.lower(), 'secondary')
-    return f'<span class="badge bg-{color}">{severity.upper()}</span>'
+    bg, text = styles.get(severity.lower(), ('secondary', 'white'))
+    return f'<span class="badge bg-{bg} text-{text}">{severity.upper()}</span>'
 
 # =============================
 # HEALTH CHECK BACKGROUND JOB
