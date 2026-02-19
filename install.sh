@@ -9,7 +9,8 @@
 # Resultado: Sistema Farosint completo listo para usar
 ###############################################################################
 
-set -e
+# No usar set -e — manejamos errores en cada paso individualmente
+# para que un fallo en una herramienta opcional no aborte la instalación
 
 # ============================================================================
 # VARIABLES
@@ -132,7 +133,7 @@ log_step "Paso 2/12: Instalando paquetes del sistema"
 
 export DEBIAN_FRONTEND=noninteractive
 
-apt-get update -qq
+apt-get update -qq || { log_error "apt update falló — verificar conexión a internet"; exit 1; }
 
 # Entorno gráfico
 apt-get install -y -qq \
@@ -168,7 +169,7 @@ apt-get install -y -qq \
     git curl wget unzip \
     sqlite3 \
     sudo \
-    > /dev/null 2>&1
+    > /dev/null 2>&1 || { log_error "Fallo instalando paquetes base — crítico"; exit 1; }
 log_ok "Herramientas de desarrollo (python3, gcc, git, sudo, etc.)"
 
 # Servicios
@@ -259,18 +260,48 @@ log_ok "Nuclei templates actualizados"
 log_step "Paso 5/12: Instalando Amass ${AMASS_VERSION}"
 
 if [ ! -f /usr/local/bin/amass ]; then
+    AMASS_INSTALLED=false
     cd /tmp
-    AMASS_URL="https://github.com/owasp-amass/amass/releases/download/${AMASS_VERSION}/amass_Linux_amd64.zip"
-    wget -q "${AMASS_URL}" -O amass.zip || {
-        log_warn "No se pudo descargar Amass ${AMASS_VERSION}, intentando latest..."
-        wget -q "https://github.com/owasp-amass/amass/releases/latest/download/amass_Linux_amd64.zip" -O amass.zip
-    }
-    unzip -o -q amass.zip -d amass_tmp
-    # El binario puede estar en la raíz o en un subdirectorio
-    find amass_tmp -name "amass" -type f -executable -exec cp {} /usr/local/bin/amass \;
-    chmod +x /usr/local/bin/amass
-    rm -rf amass.zip amass_tmp
-    log_ok "Amass instalado en /usr/local/bin/amass"
+
+    # Intentar con ZIP de GitHub releases (v5 usa nombre diferente)
+    for AMASS_URL in \
+        "https://github.com/owasp-amass/amass/releases/download/${AMASS_VERSION}/amass_Linux_amd64.zip" \
+        "https://github.com/owasp-amass/amass/releases/download/${AMASS_VERSION}/amass_linux_amd64.zip" \
+        "https://github.com/owasp-amass/amass/releases/latest/download/amass_Linux_amd64.zip"
+    do
+        if wget -q --timeout=30 "${AMASS_URL}" -O amass.zip 2>/dev/null; then
+            if unzip -o -q amass.zip -d amass_tmp 2>/dev/null; then
+                find amass_tmp -name "amass" -type f -executable -exec cp {} /usr/local/bin/amass \; 2>/dev/null
+                if [ -f /usr/local/bin/amass ]; then
+                    chmod +x /usr/local/bin/amass
+                    AMASS_INSTALLED=true
+                fi
+            fi
+            rm -rf amass.zip amass_tmp
+            [ "$AMASS_INSTALLED" = true ] && break
+        fi
+    done
+
+    # Fallback: instalar via go install
+    if [ "$AMASS_INSTALLED" = false ]; then
+        log_warn "ZIP no disponible, instalando Amass via Go (puede tardar)..."
+        su - "${FAROSINT_USER}" -c "
+            export GOROOT=/usr/local/go
+            export GOPATH=\$HOME/go
+            export PATH=\$PATH:\$GOROOT/bin:\$GOPATH/bin
+            go install github.com/owasp-amass/amass/v4/...@latest 2>&1 | tail -3
+        " || true
+        if [ -f "${FAROSINT_HOME}/go/bin/amass" ]; then
+            cp "${FAROSINT_HOME}/go/bin/amass" /usr/local/bin/amass
+            AMASS_INSTALLED=true
+        fi
+    fi
+
+    if [ "$AMASS_INSTALLED" = true ]; then
+        log_ok "Amass instalado en /usr/local/bin/amass"
+    else
+        log_warn "Amass no se pudo instalar — subdomain enum usará solo Subfinder (funcional)"
+    fi
 else
     log_ok "Amass ya instalado"
 fi
