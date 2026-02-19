@@ -77,7 +77,12 @@ Log in as `farosint`, open a terminal, then run each block in order:
 
 **Block 2 — as farosint** (back to your normal user):
 
-    git clone https://github.com/3breiten/Farosint.git ~/FAROSINT
+> **Note:** This is a private repository. You need a GitHub Personal Access Token (PAT) to clone it.
+> Get one at: GitHub → Settings → Developer settings → Personal access tokens → Generate new token (classic) → scope: `repo`
+
+    git clone https://3breiten:YOUR_TOKEN@github.com/3breiten/Farosint.git ~/FAROSINT
+
+Replace `YOUR_TOKEN` with your actual GitHub token.
 
 **Block 3 — run the installer as root:**
 
