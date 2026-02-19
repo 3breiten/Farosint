@@ -525,6 +525,12 @@ cp "${SYSTEM_DIR}/launchers/farosint-cli" /usr/local/bin/
 chmod +x /usr/local/bin/farosint*
 log_ok "Launchers instalados en /usr/local/bin/"
 
+# Instalar y habilitar servicio farosint-dashboard (autostart al boot)
+cp "${SYSTEM_DIR}/farosint-dashboard.service" /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable farosint-dashboard
+log_ok "Servicio farosint-dashboard habilitado (arranca automáticamente al boot)"
+
 # Crear directorios necesarios de la aplicación
 mkdir -p "${FAROSINT_DIR}/output"
 mkdir -p "${FAROSINT_DIR}/logs"

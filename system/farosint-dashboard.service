@@ -1,0 +1,18 @@
+[Unit]
+Description=FAROSINT Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=farosint
+WorkingDirectory=/home/farosint/FAROSINT/gui
+Environment="PATH=/home/farosint/FAROSINT/farosint-env/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/farosint/FAROSINT"
+ExecStart=/home/farosint/FAROSINT/farosint-env/bin/python3 /home/farosint/FAROSINT/gui/app.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/farosint-dashboard.log
+StandardError=append:/var/log/farosint-dashboard-error.log
+
+[Install]
+WantedBy=multi-user.target
