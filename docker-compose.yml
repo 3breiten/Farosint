@@ -1,0 +1,19 @@
+services:
+  farosint:
+    build: .
+    image: farosint:latest
+    container_name: farosint
+    ports:
+      - "5000:5000"
+    volumes:
+      # Volumen persistente: base de datos, output, logs, nuclei-templates
+      - farosint_data:/data
+    cap_add:
+      # Necesario para nmap (raw sockets) y rustscan
+      - NET_RAW
+      - NET_ADMIN
+    restart: unless-stopped
+
+volumes:
+  farosint_data:
+    driver: local

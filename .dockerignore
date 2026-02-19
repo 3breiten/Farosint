@@ -1,0 +1,40 @@
+# Entorno virtual Python (se recrea en el build)
+farosint-env/
+
+# Caché Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Base de datos local
+gui/farosint.db
+farosint.db
+
+# Resultados de scans
+output/
+engine/output/
+engine/logs/
+engine/cache/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.bak
+*.swp
+.DS_Store
+
+# Claude Code
+.claude/
+.claudeignore
+
+# Nuclei templates (se descargan en runtime)
+nuclei-templates/
