@@ -167,8 +167,9 @@ apt-get install -y -qq \
     libxml2-dev libxslt1-dev libffi-dev libssl-dev \
     git curl wget unzip \
     sqlite3 \
+    sudo \
     > /dev/null 2>&1
-log_ok "Herramientas de desarrollo (python3, gcc, git, etc.)"
+log_ok "Herramientas de desarrollo (python3, gcc, git, sudo, etc.)"
 
 # Servicios
 apt-get install -y -qq \

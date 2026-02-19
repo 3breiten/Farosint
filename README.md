@@ -65,17 +65,30 @@ During installation:
 
 ### Step 2: Install Farosint
 
-Log in as `farosint`, then run:
+> **Note:** Debian minimal does not include `sudo`. Use `su -` to get a root shell.
+
+Log in as `farosint`, open a terminal, then run each block in order:
+
+**Block 1 — as root** (enter root password when prompted):
 
     su -
     apt update && apt install -y git
     exit
+
+**Block 2 — as farosint** (back to your normal user):
+
     git clone https://github.com/3breiten/Farosint.git ~/FAROSINT
-    sudo bash ~/FAROSINT/install.sh
+
+**Block 3 — run the installer as root:**
+
+    su -
+    bash /home/farosint/FAROSINT/install.sh
+
+The installer takes ~10–20 minutes depending on internet speed. At the end it shows a verification summary of every tool installed.
 
 ### Step 3: Reboot
 
-    sudo reboot
+    reboot
 
 After reboot you'll have the full Farosint desktop with LightDM login screen.
 
