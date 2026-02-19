@@ -88,16 +88,16 @@ RUN python3 -m venv /home/farosint/FAROSINT/farosint-env \
         --no-cache-dir -q \
         -r /home/farosint/FAROSINT/requirements.txt
 
-# ── Directorios runtime ───────────────────────────────────────────────────────
+# ── Directorios runtime (los que pertenecen a farosint) ──────────────────────
 RUN mkdir -p \
     /home/farosint/FAROSINT/output \
     /home/farosint/FAROSINT/engine/logs \
     /home/farosint/FAROSINT/engine/cache \
-    /home/farosint/nuclei-templates \
-    /data
+    /home/farosint/nuclei-templates
 
-# ── Entrypoint ────────────────────────────────────────────────────────────────
+# ── Entrypoint y /data (requieren root) ──────────────────────────────────────
 USER root
+RUN mkdir -p /data && chown farosint:farosint /data
 COPY --chown=farosint:farosint docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
