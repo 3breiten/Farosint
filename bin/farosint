@@ -1,1 +1,4 @@
-/home/farosint/FAROSINT/engine/core/orchestrator.py
+#!/bin/bash
+# FAROSINT - Launcher principal
+# Delega al launcher instalado en /usr/local/bin
+exec /usr/local/bin/farosint "$@"
