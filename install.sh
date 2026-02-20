@@ -96,10 +96,16 @@ echo "  - Branding completo (wallpaper, logo, menú)"
 echo ""
 echo "Usuario: ${FAROSINT_USER} (debe existir — crearlo al instalar Debian)"
 echo ""
-read -p "¿Continuar? (s/N): " confirm
-if [[ ! "$confirm" =~ ^[sS]$ ]]; then
-    echo "Instalación cancelada."
-    exit 0
+
+# Modo no-interactivo (usado desde el ISO installer)
+if [[ "$1" == "--unattended" ]]; then
+    echo "Modo desatendido — continuando automáticamente..."
+else
+    read -p "¿Continuar? (s/N): " confirm
+    if [[ ! "$confirm" =~ ^[sS]$ ]]; then
+        echo "Instalación cancelada."
+        exit 0
+    fi
 fi
 
 # ============================================================================
