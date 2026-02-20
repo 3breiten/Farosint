@@ -14,7 +14,48 @@ Built for security professionals, pentesters, and red team operators.
 
 The fastest way to run FAROSINT. Works on Linux, macOS, and Windows (WSL2).
 
-**Requirements:** Docker + Docker Compose ([install Docker](https://docs.docker.com/get-docker/))
+### Step 1 — Install Git
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt update && sudo apt install -y git
+```
+
+**Linux (RHEL/Fedora/CentOS):**
+```bash
+sudo dnf install -y git
+```
+
+**macOS:**
+```bash
+brew install git
+# If you don't have Homebrew: https://brew.sh
+```
+
+**Windows:**
+Download and install from [git-scm.com](https://git-scm.com/download/win), or use **WSL2** (recommended — see below).
+
+> Already have Git? Skip to Step 2.
+
+### Step 2 — Install Docker
+
+Download and install **Docker Desktop** from [docs.docker.com/get-docker](https://docs.docker.com/get-docker/) (Windows/macOS).
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt update && sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt update && sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo service docker start
+sudo usermod -aG docker $USER && newgrp docker
+```
+
+> Already have Docker? Skip to Step 3.
+
+### Step 3 — Run FAROSINT
 
 ```bash
 git clone https://github.com/3breiten/Farosint.git
@@ -33,6 +74,16 @@ docker compose up -d      # start again (uses cached build)
 ```
 
 Scan results, database, and logs persist in a Docker volume (`farosint_data`) across restarts.
+
+### Windows — Using WSL2 (recommended)
+
+1. Open **PowerShell as Administrator** and run:
+```powershell
+wsl --install
+```
+2. Restart your PC, then open the **Ubuntu** app from the Start menu
+3. Inside Ubuntu, follow the **Linux (Debian/Ubuntu)** steps above for Git and Docker
+4. Access the dashboard at **http://localhost:5000** from your Windows browser
 
 ---
 
