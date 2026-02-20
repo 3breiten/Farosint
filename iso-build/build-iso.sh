@@ -78,7 +78,7 @@ cp "${ISO_ASSETS}/grub/grub.cfg" "${WORK_DIR}/iso/boot/grub/grub.cfg"
 ok "GRUB config aplicado"
 
 # Logo FAROSINT como splash (si existe)
-LOGO="${FAROSINT_DIR}/gui/static/images/logo.png"
+LOGO="${FAROSINT_DIR}/gui/static/img/farosint.png"
 if [ -f "${LOGO}" ]; then
     cp "${LOGO}" "${WORK_DIR}/iso/boot/grub/splash.png"
     # Agregar la línea del splash al grub.cfg
