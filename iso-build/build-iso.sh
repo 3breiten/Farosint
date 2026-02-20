@@ -102,8 +102,8 @@ ok "Firma FAROSINT embebida"
 # ── 4. Regenerar MD5 checksums ─────────────────────────────────────────────────
 log "Paso 4/5: Regenerando checksums..."
 cd "${WORK_DIR}/iso"
-find . -follow -type f ! -name "md5sum.txt" ! -path "./isolinux/*" \
-    -exec md5sum {} \; > md5sum.txt
+find . -type f ! -name "md5sum.txt" ! -path "./isolinux/*" \
+    -exec md5sum {} \; 2>/dev/null > md5sum.txt || true
 ok "Checksums actualizados"
 
 # ── 5. Empacar nuevo ISO ───────────────────────────────────────────────────────
