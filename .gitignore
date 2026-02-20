@@ -57,3 +57,4 @@ tools/
 
 # Node modules (if any)
 node_modules/
+iso-build/*.iso
