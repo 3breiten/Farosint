@@ -15,7 +15,7 @@ ISO_ASSETS="${FAROSINT_DIR}/iso-build/farosint-iso"
 OUTPUT_ISO="${FAROSINT_DIR}/iso-build/FAROSINT-v1.0-installer.iso"
 
 # Debian 12 netinstall (mínima, ~600MB)
-DEBIAN_ISO_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12-netinst.amd64.iso"
+DEBIAN_ISO_URL="https://cdimage.debian.org/cdimage/archive/latest-oldstable/amd64/iso-cd/debian-12.13.0-amd64-netinst.iso"
 DEBIAN_ISO="/tmp/debian-12-netinst.amd64.iso"
 
 RED='\033[0;31m'
