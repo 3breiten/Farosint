@@ -124,18 +124,16 @@ xorriso -as mkisofs \
     --protective-msdos-label \
     -append_partition 2 0xEF "${WORK_DIR}/iso/boot/grub/efi.img" \
     -appended_part_as_gpt \
-    -c boot/boot.cat \
-    -b boot/grub/i386-pc/eltorito.img \
+    -c isolinux/boot.cat \
+    -b isolinux/isolinux.bin \
     -no-emul-boot \
     -boot-load-size 4 \
     -boot-info-table \
-    --grub2-boot-info \
     -eltorito-alt-boot \
     -e boot/grub/efi.img \
     -no-emul-boot \
     -o "${OUTPUT_ISO}" \
-    "${WORK_DIR}/iso" \
-    2>/dev/null
+    "${WORK_DIR}/iso"
 
 ok "ISO generado: ${OUTPUT_ISO}"
 echo ""
