@@ -12,6 +12,8 @@ import threading
 import json
 from datetime import datetime
 import io
+import yaml
+import xlsxwriter
 
 # Agregar path del engine
 engine_path = Path(__file__).resolve().parent.parent / "engine"
@@ -36,6 +38,28 @@ db = DatabaseManager()
 
 # Variable global
 current_orchestrator = None
+
+# =============================
+# API KEYS - helpers
+# =============================
+
+API_KEYS_FILE = Path(__file__).resolve().parent.parent / 'config' / 'api_keys.yaml'
+
+def load_api_keys():
+    """Carga API keys desde ~/FAROSINT/config/api_keys.yaml"""
+    try:
+        if API_KEYS_FILE.exists():
+            with open(API_KEYS_FILE, 'r') as f:
+                return yaml.safe_load(f) or {}
+    except Exception:
+        pass
+    return {}
+
+def save_api_keys(keys: dict):
+    """Guarda API keys en ~/FAROSINT/config/api_keys.yaml"""
+    API_KEYS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(API_KEYS_FILE, 'w') as f:
+        yaml.dump(keys, f, default_flow_style=False, allow_unicode=True)
 
 # =============================
 # RUTAS PRINCIPALES
@@ -98,6 +122,38 @@ def scan_detail(scan_id):
     target_type = detect_target_type(scan.get('target', ''))
     is_lan_scan = target_type in ('ip', 'cidr', 'range')
 
+    # Subdominios CONFIRMADOS con su árbol de hosts.
+    # Subdominio = zona con evidencia (hosts más profundos descubiertos bajo ella).
+    # Cada zona muestra también sus hosts hijo (www.iss2.insside.net bajo iss2.insside.net).
+    subdomain_tree = []
+    first_level_subdomains = []  # para el contador del tab
+    if not is_lan_scan:
+        target_domain = scan.get('target', '')
+        target_depth = len(target_domain.split('.'))
+
+        # Paso 1: zonas confirmadas por tener hosts más profundos
+        confirmed_zones = set()
+        for sub in subdomains:
+            parts = sub['subdomain'].split('.')
+            if len(parts) > target_depth + 1:
+                confirmed_zones.add('.'.join(parts[-(target_depth + 1):]))
+
+        # Paso 2: armar árbol zona → hijos
+        subdomain_index = {sub['subdomain']: sub for sub in subdomains}
+        for fl_fqdn in sorted(confirmed_zones):
+            zone_entry = subdomain_index.get(fl_fqdn, {
+                'subdomain': fl_fqdn,
+                'source': 'inferido',
+                'is_alive': False,
+                'http_status': None
+            })
+            children = sorted(
+                [s for s in subdomains if s['subdomain'].endswith('.' + fl_fqdn)],
+                key=lambda x: x['subdomain']
+            )
+            subdomain_tree.append({'zone': zone_entry, 'children': children})
+            first_level_subdomains.append(zone_entry)
+
     # Para LAN scans, extraer info adicional del raw_results
     lan_info = {}
     if is_lan_scan and raw_results:
@@ -114,7 +170,8 @@ def scan_detail(scan_id):
 
     return render_template('scan_detail.html',
                          scan=scan,
-                         subdomains=subdomains,
+                         subdomains=first_level_subdomains,
+                         subdomain_tree=subdomain_tree,
                          services=services,
                          vulnerabilities=vulnerabilities_enriched,
                          raw_results=raw_results,
@@ -133,6 +190,55 @@ def results():
 def config_page():
     """Página de configuración"""
     return render_template('config.html')
+
+@app.route('/api/config/keys', methods=['GET'])
+def api_get_keys():
+    """Devuelve las API keys guardadas (oculta valores sensibles)"""
+    keys = load_api_keys()
+    # Enmascarar valores: mostrar solo primeros 4 chars para confirmar que hay algo
+    masked = {}
+    for k, v in keys.items():
+        if v and len(str(v)) > 4:
+            masked[k] = str(v)[:4] + '*' * (len(str(v)) - 4)
+        else:
+            masked[k] = v or ''
+    return jsonify({'success': True, 'keys': masked, 'raw': keys})
+
+@app.route('/api/config/keys', methods=['POST'])
+def api_save_keys():
+    """Guarda las API keys"""
+    data = request.get_json() or {}
+    current = load_api_keys()
+    # Solo actualizar campos enviados y no vacíos (no borrar lo existente si viene vacío)
+    for field in ['shodan', 'censys_id', 'censys_secret', 'virustotal', 'github', 'greynoise']:
+        val = data.get(field, '').strip()
+        if val:  # solo sobreescribir si viene algo
+            current[field] = val
+        elif field not in current:
+            current[field] = ''
+    save_api_keys(current)
+    return jsonify({'success': True, 'message': 'API keys guardadas correctamente'})
+
+@app.route('/api/config/keys/test', methods=['POST'])
+def api_test_keys():
+    """Prueba las API keys configuradas"""
+    keys = load_api_keys()
+    results = {}
+
+    # Probar Shodan
+    shodan_key = keys.get('shodan', '')
+    if shodan_key:
+        try:
+            import shodan as shodan_lib
+            api = shodan_lib.Shodan(shodan_key)
+            info = api.info()
+            results['shodan'] = {'ok': True, 'plan': info.get('plan', '?'), 'credits': info.get('query_credits', '?')}
+        except Exception as e:
+            results['shodan'] = {'ok': False, 'error': str(e)}
+    else:
+        results['shodan'] = {'ok': False, 'error': 'Sin API key'}
+
+    return jsonify({'success': True, 'results': results})
 
 # =============================
 # RUTAS DE PREVIEW DE DASHBOARDS
@@ -499,7 +605,7 @@ def api_scan_graph(scan_id):
             ip = port_id.split(':')[0]
 
             # Si el target contiene la IP o coincide con el servicio
-            if ip in target_url or service.get('product', '').lower() in vuln.get('name', '').lower():
+            if ip in target_url or (service.get('product') or '').lower() in (vuln.get('name') or '').lower():
                 edges.append({
                     'data': {
                         'source': service_id,
@@ -565,6 +671,63 @@ def api_export_scan(scan_id, format):
         return export_html(scan_id)
     else:
         return jsonify({'error': 'Formato no soportado'}), 400
+
+@app.route('/api/scan/<scan_id>/shodan', methods=['POST'])
+def api_shodan_enrich(scan_id):
+    """Enriquecer escaneo con datos de Shodan"""
+    keys = load_api_keys()
+    shodan_key = keys.get('shodan', '').strip()
+    if not shodan_key:
+        return jsonify({'error': 'Shodan API key no configurada. Ve a Configuración.'}), 400
+
+    scan = db.get_scan(scan_id)
+    if not scan:
+        return jsonify({'error': 'Escaneo no encontrado'}), 404
+
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'engine'))
+        from modules.shodan_module import ShodanModule
+
+        shodan_mod = ShodanModule(shodan_key)
+
+        # Obtener IPs del escaneo (de la tabla services)
+        services = db.get_services(scan_id)
+        ips = list({svc.get('ip') for svc in services if svc.get('ip')})
+
+        domain = None if detect_target_type(scan['target']) in ('ip', 'cidr', 'range') else scan['target']
+
+        results = shodan_mod.enrich_scan(ips, domain)
+
+        # Guardar CVEs nuevos encontrados por Shodan
+        saved_vulns = 0
+        for vuln in results.get('new_vulns', []):
+            try:
+                db.add_vulnerability(
+                    scan_id, scan['target'],
+                    vuln['name'], vuln['severity'],
+                    description=vuln['description'],
+                    cve=vuln['cve_id'],
+                    matched_at=vuln['ip']
+                )
+                saved_vulns += 1
+            except Exception:
+                pass
+
+        # Guardar resultados Shodan en raw_results (merge)
+        raw = db.get_raw_results(scan_id) or {}
+        raw['shodan'] = results
+        db.save_raw_results(scan_id, raw)
+
+        return jsonify({
+            'success': True,
+            'ips_consultadas': len(ips),
+            'hosts_encontrados': len(results['hosts']),
+            'nuevas_vulns': saved_vulns,
+            'data': results
+        })
+
+    except Exception as e:
+        return jsonify({'error': f'Error Shodan: {str(e)}'}), 500
 
 @app.route('/api/health', methods=['GET'])
 def api_health_check():
@@ -920,9 +1083,142 @@ Total vulnerabilities found: {len(vulnerabilities)}
     )
 
 def export_excel(scan_id):
-    """Exportar escaneo a Excel (placeholder)"""
-    # TODO: Implementar con openpyxl
-    return jsonify({'error': 'Excel export en desarrollo'}), 501
+    """Exportar escaneo a Excel con xlsxwriter — múltiples hojas"""
+    scan = db.get_scan(scan_id)
+    if not scan:
+        return jsonify({'error': 'Escaneo no encontrado'}), 404
+
+    subdomains  = db.get_subdomains(scan_id)
+    services    = db.get_services(scan_id)
+    vulns       = db.get_vulnerabilities(scan_id)
+    raw_results = db.get_raw_results(scan_id)
+
+    output = io.BytesIO()
+    wb = xlsxwriter.Workbook(output, {'in_memory': True})
+
+    # ── Estilos ──────────────────────────────────────────────────────────────
+    hdr = wb.add_format({'bold': True, 'bg_color': '#1a1a2e', 'font_color': '#ffffff',
+                         'border': 1, 'font_size': 11})
+    title_fmt = wb.add_format({'bold': True, 'font_size': 14, 'font_color': '#1a1a2e'})
+    label_fmt = wb.add_format({'bold': True, 'font_color': '#555555'})
+    cell = wb.add_format({'border': 1, 'text_wrap': True, 'valign': 'top'})
+    sev = {
+        'critical': wb.add_format({'border': 1, 'bg_color': '#7b2c2c', 'font_color': '#fff'}),
+        'high':     wb.add_format({'border': 1, 'bg_color': '#c0392b', 'font_color': '#fff'}),
+        'medium':   wb.add_format({'border': 1, 'bg_color': '#f39c12', 'font_color': '#fff'}),
+        'low':      wb.add_format({'border': 1, 'bg_color': '#f1c40f'}),
+        'info':     wb.add_format({'border': 1, 'bg_color': '#3498db', 'font_color': '#fff'}),
+    }
+
+    # ── Hoja 1: Resumen ───────────────────────────────────────────────────────
+    ws = wb.add_worksheet('Resumen')
+    ws.set_column('A:A', 28)
+    ws.set_column('B:B', 45)
+    ws.write('A1', 'FAROSINT - Informe de Escaneo', title_fmt)
+    data_rows = [
+        ('Target',         scan.get('target', '')),
+        ('Scan ID',        scan_id),
+        ('Tipo',           scan.get('scan_type', '')),
+        ('Estado',         scan.get('status', '')),
+        ('Inicio',         str(scan.get('start_time', ''))),
+        ('Fin',            str(scan.get('end_time', ''))),
+        ('Subdominios',    len(subdomains)),
+        ('Servicios',      len(services)),
+        ('Vulnerabilidades', len(vulns)),
+        ('URLs activas',   len(raw_results.get('alive_urls', [])) if raw_results else 0),
+    ]
+    for i, (lbl, val) in enumerate(data_rows, start=2):
+        ws.write(i, 0, lbl, label_fmt)
+        ws.write(i, 1, val)
+
+    sev_counts = {}
+    for v in vulns:
+        s = (v.get('severity') or 'unknown').lower()
+        sev_counts[s] = sev_counts.get(s, 0) + 1
+    ws.write(len(data_rows) + 3, 0, 'Severidad', label_fmt)
+    for i, (s, c) in enumerate(sev_counts.items()):
+        ws.write(len(data_rows) + 4 + i, 0, s.capitalize())
+        ws.write(len(data_rows) + 4 + i, 1, c)
+
+    # ── Hoja 2: Subdominios ───────────────────────────────────────────────────
+    ws2 = wb.add_worksheet('Subdominios')
+    ws2.set_column('A:A', 45)
+    ws2.set_column('B:B', 15)
+    ws2.set_column('C:C', 12)
+    headers2 = ['Subdominio', 'Estado', 'HTTP Status']
+    for col, h in enumerate(headers2):
+        ws2.write(0, col, h, hdr)
+    for row, sub in enumerate(subdomains, start=1):
+        ws2.write(row, 0, sub.get('subdomain', ''), cell)
+        ws2.write(row, 1, 'Online' if sub.get('is_alive') else 'Offline', cell)
+        ws2.write(row, 2, sub.get('http_status') or '', cell)
+
+    # ── Hoja 3: URLs Activas ──────────────────────────────────────────────────
+    ws3 = wb.add_worksheet('URLs Activas')
+    ws3.set_column('A:A', 55)
+    ws3.set_column('B:B', 35)
+    ws3.set_column('C:C', 10)
+    ws3.set_column('D:D', 40)
+    ws3.set_column('E:E', 30)
+    headers3 = ['URL', 'Host', 'Status', 'Título', 'Tecnologías']
+    for col, h in enumerate(headers3):
+        ws3.write(0, col, h, hdr)
+    alive_urls = raw_results.get('alive_urls', []) if raw_results else []
+    for row, url_info in enumerate(alive_urls, start=1):
+        ws3.write(row, 0, url_info.get('url', ''), cell)
+        ws3.write(row, 1, url_info.get('host', ''), cell)
+        ws3.write(row, 2, url_info.get('status_code') or '', cell)
+        ws3.write(row, 3, (url_info.get('title') or '')[:100], cell)
+        techs = ', '.join(url_info.get('tech', []) or [])
+        ws3.write(row, 4, techs, cell)
+
+    # ── Hoja 4: Servicios ─────────────────────────────────────────────────────
+    ws4 = wb.add_worksheet('Servicios')
+    ws4.set_column('A:A', 18)
+    ws4.set_column('B:B', 8)
+    ws4.set_column('C:C', 8)
+    ws4.set_column('D:D', 18)
+    ws4.set_column('E:E', 30)
+    headers4 = ['IP', 'Puerto', 'Proto', 'Servicio', 'Producto / Versión']
+    for col, h in enumerate(headers4):
+        ws4.write(0, col, h, hdr)
+    for row, svc in enumerate(services, start=1):
+        ws4.write(row, 0, svc.get('ip', ''), cell)
+        ws4.write(row, 1, svc.get('port', ''), cell)
+        ws4.write(row, 2, svc.get('protocol', ''), cell)
+        ws4.write(row, 3, svc.get('service', '') or '', cell)
+        prod = f"{svc.get('product', '') or ''} {svc.get('version', '') or ''}".strip()
+        ws4.write(row, 4, prod, cell)
+
+    # ── Hoja 5: Vulnerabilidades ──────────────────────────────────────────────
+    ws5 = wb.add_worksheet('Vulnerabilidades')
+    ws5.set_column('A:A', 25)
+    ws5.set_column('B:B', 12)
+    ws5.set_column('C:C', 8)
+    ws5.set_column('D:D', 60)
+    ws5.set_column('E:E', 35)
+    headers5 = ['CVE / ID', 'Severidad', 'CVSS', 'Descripción', 'Remediación']
+    for col, h in enumerate(headers5):
+        ws5.write(0, col, h, hdr)
+    for row, v in enumerate(vulns, start=1):
+        severity_lower = (v.get('severity') or 'info').lower()
+        fmt = sev.get(severity_lower, cell)
+        ws5.write(row, 0, v.get('cve_id') or v.get('name', ''), fmt)
+        ws5.write(row, 1, (v.get('severity') or '').upper(), fmt)
+        ws5.write(row, 2, v.get('cvss_score') or '', fmt)
+        ws5.write(row, 3, (v.get('description') or '')[:500], cell)
+        ws5.write(row, 4, (v.get('remediation') or '')[:200], cell)
+
+    wb.close()
+    output.seek(0)
+
+    filename = f"farosint_{scan.get('target', scan_id).replace('.', '_')}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )
 
 def export_pdf(scan_id):
     """Exportar escaneo a PDF profesional con reportlab"""

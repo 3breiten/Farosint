@@ -96,6 +96,10 @@
                         Asegúrate de proteger este archivo adecuadamente.
                     </div>
                     
+                    <div id="testResultsBox" class="alert alert-info mt-3" style="display:none;">
+                        <div id="testResults"></div>
+                    </div>
+
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <button type="button" class="btn btn-secondary" id="btnTest">
                             <i data-lucide="check-circle"></i> Probar Conexiones
@@ -132,25 +136,79 @@
 
 {% block extra_js %}
 <script>
-// Manejar envío del formulario
+// Cargar keys al abrir la página
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/config/keys')
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.raw) {
+                const k = data.raw;
+                if (k.shodan)         document.getElementById('shodanKey').value    = k.shodan;
+                if (k.censys_id)      document.getElementById('censysId').value     = k.censys_id;
+                if (k.censys_secret)  document.getElementById('censysSecret').value = k.censys_secret;
+                if (k.virustotal)     document.getElementById('vtKey').value         = k.virustotal;
+                if (k.github)         document.getElementById('githubToken').value   = k.github;
+            }
+        })
+        .catch(() => {});
+});
+
+// Guardar
 document.getElementById('apiKeysForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    
-    const apiKeys = {
-        shodan: document.getElementById('shodanKey').value,
-        censys_id: document.getElementById('censysId').value,
-        censys_secret: document.getElementById('censysSecret').value,
-        virustotal: document.getElementById('vtKey').value,
-        github: document.getElementById('githubToken').value
+    const payload = {
+        shodan:        document.getElementById('shodanKey').value.trim(),
+        censys_id:     document.getElementById('censysId').value.trim(),
+        censys_secret: document.getElementById('censysSecret').value.trim(),
+        virustotal:    document.getElementById('vtKey').value.trim(),
+        github:        document.getElementById('githubToken').value.trim()
     };
-    
-    // TODO: Implementar guardado de API keys
-    alert('Funcionalidad de guardado próximamente.\n\nPor ahora, configura manualmente en:\n~/FAROSINT/config/api_keys.yaml');
+    fetch('/api/config/keys', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showToast('API keys guardadas correctamente', 'success');
+        } else {
+            showToast('Error al guardar: ' + (data.error || ''), 'danger');
+        }
+    })
+    .catch(() => showToast('Error de conexión', 'danger'));
 });
 
 // Probar conexiones
 document.getElementById('btnTest').addEventListener('click', function() {
-    alert('Funcionalidad de test de API keys próximamente.');
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Probando...';
+    fetch('/api/config/keys/test', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            const res = data.results || {};
+            let msg = '';
+            for (const [api, info] of Object.entries(res)) {
+                msg += `<b>${api}</b>: ${info.ok ? '✓ OK' + (info.plan ? ' (plan: '+info.plan+', créditos: '+info.credits+')' : '') : '✗ ' + info.error}<br>`;
+            }
+            if (!msg) msg = 'No hay keys configuradas para probar.';
+            document.getElementById('testResults').innerHTML = msg;
+            document.getElementById('testResultsBox').style.display = 'block';
+        })
+        .finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i data-lucide="check-circle"></i> Probar Conexiones';
+            lucide.createIcons();
+        });
 });
+
+function showToast(msg, type) {
+    const t = document.createElement('div');
+    t.className = `alert alert-${type} position-fixed bottom-0 end-0 m-3`;
+    t.style.zIndex = 9999;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
 </script>
 {% endblock %}
