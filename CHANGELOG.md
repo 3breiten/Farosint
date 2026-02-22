@@ -6,7 +6,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
-## [1.1.0] - En desarrollo
+## [1.1.0] - 2026-02-22
 
 ### Correcciones de bugs (reportados por usuarios en v1.0)
 
@@ -20,11 +20,14 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 - **UI:** `filterByStatus()` en modo Profesional y Cristal solo mostraba un `alert()` — ahora filtra la tabla correctamente
 - **UI:** Strings en inglés en sección "Referencias y Recursos" — traducidos al español
 - **PDF:** CVE y descripción se excedían de los márgenes — corregido con word-wrap y columnas ajustadas
+- **Grafo:** Crash al cargar el grafo cuando vulns tenían campo `name` nulo en DB
+- **Subdominios:** Tab mostraba todos los FQDNs mezclados — ahora muestra zonas DNS confirmadas (con evidencia de hosts bajo ellas) en árbol zona→hosts hijo
 
-### Nuevas funcionalidades (v1.1)
-- [ ] Exportación a Excel (endpoint existente devolvía 501)
-- [ ] Integración Shodan API
-- [ ] Guardado persistente de API keys desde panel de configuración
+### Nuevas funcionalidades
+
+- **Excel export:** Exportación completa a .xlsx con 5 hojas (Resumen, Subdominios, URLs Activas, Servicios, Vulnerabilidades) con colores por severidad
+- **Shodan API:** Módulo de enriquecimiento — consulta IPs detectadas contra Shodan, guarda CVEs nuevos y datos de hosts
+- **API keys persistentes:** Panel de Configuración guarda y carga keys desde `config/api_keys.yaml`; botón "Probar Conexiones" valida cada servicio
 
 ---
 
