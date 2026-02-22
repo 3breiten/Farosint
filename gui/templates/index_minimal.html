@@ -643,7 +643,21 @@ function scrollToScans() {
 }
 
 function filterByStatus(status) {
-    alert('Filter by: ' + status);
+    scrollToScans();
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const badge = row.querySelector('.badge');
+        if (badge) {
+            const rowStatus = badge.textContent.toLowerCase();
+            const match = (status === 'completed' && rowStatus.includes('completado')) ||
+                          (status === 'running'   && rowStatus.includes('progreso'))   ||
+                          (status === 'failed'    && rowStatus.includes('fallido'));
+            row.style.opacity = match ? '1' : '0.2';
+        }
+    });
+    setTimeout(() => {
+        document.querySelectorAll('tbody tr').forEach(r => r.style.opacity = '1');
+    }, 2500);
 }
 
 function goToLastScanVulns() {

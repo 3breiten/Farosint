@@ -506,15 +506,27 @@ class FAROSINTPDFReport:
         # Tabla de vulnerabilidades
         data = [['CVE / ID', 'Severidad', 'CVSS', 'Descripción']]
 
+        cell_style = ParagraphStyle(
+            name='TableCell',
+            parent=self.styles['BodyText'],
+            fontSize=8,
+            leading=10,
+            wordWrap='CJK'
+        )
+
         for vuln in vulns_to_show:
             cve_id = vuln.get('cve_id') or vuln.get('name', 'N/A')
             severity = vuln.get('severity', 'unknown').upper()
             cvss = str(vuln.get('cvss_score', '-'))
             description = vuln.get('description', 'Sin descripción')
 
-            # Truncar descripción
-            if len(description) > 100:
-                description = description[:97] + '...'
+            # Truncar descripción a 200 chars (el wrap se encarga del resto)
+            if len(description) > 200:
+                description = description[:197] + '...'
+
+            # Wrap CVE id y descripción para evitar overflow
+            cve_para = Paragraph(str(cve_id), cell_style)
+            desc_para = Paragraph(str(description), cell_style)
 
             # Color por severidad
             if severity == 'CRITICAL':
@@ -526,12 +538,12 @@ class FAROSINTPDFReport:
             else:
                 severity_cell = severity
 
-            data.append([cve_id, severity_cell, cvss, description])
+            data.append([cve_para, severity_cell, cvss, desc_para])
 
         if len(vulnerabilities) > 30:
             data.append([f'... y {len(vulnerabilities) - 30} más', '', '', ''])
 
-        table = Table(data, colWidths=[1.5*inch, 1*inch, 0.6*inch, 3.2*inch])
+        table = Table(data, colWidths=[1.4*inch, 0.9*inch, 0.5*inch, 3.3*inch])
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), self.color_danger),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),

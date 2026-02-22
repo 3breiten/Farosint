@@ -141,6 +141,26 @@ body.light-mode code {
     color: #d63384;
 }
 
+/* JSON Raw: fondo claro en light mode */
+body.light-mode pre {
+    background-color: #f1f3f5;
+    color: #212529;
+    border: 1px solid #dee2e6;
+}
+
+/* Resumen de seguridad: text-muted legible en dark mode */
+body.dark-mode .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Servicios: fila de filtros (table-light) legible en dark mode */
+body.dark-mode .table-light th,
+body.dark-mode .table-light td,
+body.dark-mode tr.table-light th {
+    background-color: #3d4349 !important;
+    color: #f8f9fa !important;
+}
+
 /* Estilos para el Grafo */
 #cy {
     border-radius: 8px;
@@ -895,13 +915,13 @@ body.dark-mode .graph-legend {
                                     <!-- Bases de Datos Oficiales -->
                                     <p class="small text-muted mb-1 mt-2"><strong>🔍 Bases CVE:</strong></p>
                                     <a href="https://nvd.nist.gov/vuln/detail/{{ vuln.cve }}" target="_blank" class="btn btn-sm btn-outline-danger w-100 mb-1">
-                                        <i data-lucide="shield-alert"></i> NVD Full Details
+                                        <i data-lucide="shield-alert"></i> NVD - Detalle Completo
                                     </a>
                                     <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name={{ vuln.cve }}" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
-                                        <i data-lucide="file-text"></i> MITRE CVE Official
+                                        <i data-lucide="file-text"></i> MITRE CVE Oficial
                                     </a>
                                     <a href="https://www.cvedetails.com/cve/{{ vuln.cve }}/" target="_blank" class="btn btn-sm btn-outline-info w-100 mb-2">
-                                        <i data-lucide="bar-chart"></i> CVE Stats
+                                        <i data-lucide="bar-chart"></i> Estadísticas CVE
                                     </a>
                                     {% endif %}
 
@@ -919,52 +939,47 @@ body.dark-mode .graph-legend {
                                     <!-- Links Específicos por Tipo -->
                                     <p class="small text-muted mb-1"><strong>📚 Recursos y Advisories:</strong></p>
 
-                                    <!-- Vendor Security Advisories (Most Useful) -->
+                                    <!-- Advisories de Fabricantes -->
                                     <a href="https://www.google.com/search?q={{ vuln.name | urlencode }}+site:pentest-tools.com+OR+site:fortiguard.com+OR+site:security.nl" target="_blank" class="btn btn-sm btn-outline-primary w-100 mb-1">
-                                        <i data-lucide="search"></i> Vendor Advisories
+                                        <i data-lucide="search"></i> Advisories de Fabricantes
                                     </a>
 
                                     {% if is_xss %}
-                                    <!-- XSS Specific -->
                                     <a href="https://owasp.org/www-community/attacks/xss/" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
-                                        <i data-lucide="shield"></i> OWASP XSS Guide
+                                        <i data-lucide="shield"></i> Guía OWASP XSS
                                     </a>
                                     <a href="https://portswigger.net/web-security/cross-site-scripting" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
-                                        <i data-lucide="graduation-cap"></i> PortSwigger XSS Lab
+                                        <i data-lucide="graduation-cap"></i> Laboratorio XSS PortSwigger
                                     </a>
                                     {% elif is_sqli %}
-                                    <!-- SQL Injection Specific -->
                                     <a href="https://owasp.org/www-community/attacks/SQL_Injection" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
-                                        <i data-lucide="shield"></i> OWASP SQLi Guide
+                                        <i data-lucide="shield"></i> Guía OWASP Inyección SQL
                                     </a>
                                     <a href="https://portswigger.net/web-security/sql-injection" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
-                                        <i data-lucide="graduation-cap"></i> PortSwigger SQLi Lab
+                                        <i data-lucide="graduation-cap"></i> Laboratorio SQLi PortSwigger
                                     </a>
                                     {% elif is_csrf %}
-                                    <!-- CSRF Specific -->
                                     <a href="https://owasp.org/www-community/attacks/csrf" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
-                                        <i data-lucide="shield"></i> OWASP CSRF Guide
+                                        <i data-lucide="shield"></i> Guía OWASP CSRF
                                     </a>
                                     {% elif is_rce %}
-                                    <!-- RCE Specific -->
                                     <a href="https://owasp.org/www-community/attacks/Command_Injection" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
-                                        <i data-lucide="shield"></i> OWASP Command Injection
+                                        <i data-lucide="shield"></i> OWASP Inyección de Comandos
                                     </a>
                                     {% elif is_lfi %}
-                                    <!-- LFI/Path Traversal Specific -->
                                     <a href="https://owasp.org/www-community/attacks/Path_Traversal" target="_blank" class="btn btn-sm btn-outline-warning w-100 mb-1">
                                         <i data-lucide="shield"></i> OWASP Path Traversal
                                     </a>
                                     {% endif %}
 
-                                    <!-- PoC & Exploits -->
+                                    <!-- PoC y Exploits -->
                                     {% if vuln.cve %}
                                     <a href="https://www.google.com/search?q={{ vuln.cve | urlencode }}+site:github.com+OR+site:exploit-db.com" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
-                                        <i data-lucide="code"></i> PoC & Exploits
+                                        <i data-lucide="code"></i> PoC y Exploits
                                     </a>
                                     {% else %}
                                     <a href="https://www.google.com/search?q={{ vuln.name | urlencode }}+PoC+OR+exploit" target="_blank" class="btn btn-sm btn-outline-dark w-100 mb-1">
-                                        <i data-lucide="code"></i> PoC & Exploits
+                                        <i data-lucide="code"></i> PoC y Exploits
                                     </a>
                                     {% endif %}
 
@@ -1134,20 +1149,7 @@ body.dark-mode .graph-legend {
     <div class="tab-pane fade" id="graph" role="tabpanel">
         <div class="row mb-3">
             <div class="col-md-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5><i data-lucide="network"></i> Mapa de Relaciones</h5>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="resetGraph()">
-                            <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Reset
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fitGraph()">
-                            <i data-lucide="maximize-2" style="width:14px;height:14px;"></i> Ajustar
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportGraphImage()">
-                            <i data-lucide="download" style="width:14px;height:14px;"></i> Exportar
-                        </button>
-                    </div>
-                </div>
+                <h5><i data-lucide="network"></i> Mapa de Relaciones</h5>
             </div>
         </div>
 
@@ -1207,8 +1209,23 @@ body.dark-mode .graph-legend {
             </div>
         </div>
 
-        <!-- Contenedor del Grafo -->
-        <div id="cy" style="width: 100%; height: 600px; border: 1px solid #dee2e6; background: #fafafa;"></div>
+        <!-- Contenedor del Grafo con botones flotantes -->
+        <div style="position: relative;">
+            <div id="cy" style="width: 100%; height: 600px; border: 1px solid #dee2e6; background: #fafafa;"></div>
+            <div style="position: absolute; top: 10px; right: 10px; z-index: 10;">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="resetGraph()" style="background:rgba(255,255,255,0.85);">
+                        <i data-lucide="refresh-cw" style="width:14px;height:14px;"></i> Reset
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="fitGraph()" style="background:rgba(255,255,255,0.85);">
+                        <i data-lucide="maximize-2" style="width:14px;height:14px;"></i> Ajustar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportGraphImage()" style="background:rgba(255,255,255,0.85);">
+                        <i data-lucide="download" style="width:14px;height:14px;"></i> Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- JSON Raw -->
@@ -1776,18 +1793,16 @@ function renderCytoscapeGraph(elements, isLan) {
             // Para LAN: layout jerárquico breadthfirst (árbol claro)
             name: 'breadthfirst',
             directed: true,
-            animate: true,
-            animationDuration: 800,
+            animate: false,
             spacingFactor: 1.4,
             padding: 30,
             roots: elements.nodes
                 .filter(n => n.data.type === 'target')
                 .map(n => '#' + n.data.id)
         } : {
-            // Para domain scans: layout COSE (fuerza)
+            // Para domain scans: layout COSE (fuerza) — sin animación inicial
             name: 'cose',
-            animate: true,
-            animationDuration: 1000,
+            animate: false,
             nodeRepulsion: 8000,
             idealEdgeLength: 100,
             edgeElasticity: 100,
