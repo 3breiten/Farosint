@@ -4,6 +4,39 @@ Todos los cambios notables en el proyecto FAROSINT se documentarán en este arch
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 
+---
+
+## [1.1.0] - En desarrollo
+
+### Correcciones de bugs (reportados por usuarios en v1.0)
+
+- **UI:** Panel JSON Raw mantiene fondo oscuro en modo light (ilegible)
+- **UI:** Sección Servicios — texto blanco ilegible en dark mode (filas de filtro)
+- **UI:** Resumen de Seguridad — contraste insuficiente en dark mode
+- **UI:** Favicon se pierde al navegar fuera del home (mostraba ícono genérico del mundo)
+- **UI:** Ícono dark/light mode incorrecto — ahora muestra luna en light (ir a dark) y sol en dark (ir a light)
+- **UI:** Botones Reset/Ajustar/Exportar del mapa de relaciones movidos dentro del grafo como botones flotantes
+- **UI:** Mapa de relaciones mostraba nodos en línea recta en la carga inicial — ahora aplica el layout visual directamente
+- **UI:** `filterByStatus()` en modo Profesional y Cristal solo mostraba un `alert()` — ahora filtra la tabla correctamente
+- **UI:** Strings en inglés en sección "Referencias y Recursos" — traducidos al español
+- **PDF:** CVE y descripción se excedían de los márgenes — corregido con word-wrap y columnas ajustadas
+
+### Nuevas funcionalidades (v1.1)
+- [ ] Exportación a Excel (endpoint existente devolvía 501)
+- [ ] Integración Shodan API
+- [ ] Guardado persistente de API keys desde panel de configuración
+
+---
+
+## [1.0.0] - 2026-02-22
+
+> **Nota:** Esta versión fue lanzada con los bugs de UI listados arriba en v1.1.
+> Se recomienda usar la versión 1.1 cuando esté disponible.
+
+### Primera versión pública
+
+---
+
 ## [No Versionado] - 2026-02-07
 
 ### Añadido - Visualización Interactiva de Grafos

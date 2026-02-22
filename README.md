@@ -1,6 +1,6 @@
 # FAROSINT
 
-> Version 1.0.0
+> Version 1.0.0 · **v1.1 en desarrollo** — incluirá correcciones de UI y nuevas funcionalidades. Ver [CHANGELOG](CHANGELOG.md).
 
 **OSINT & Attack Surface Analysis Framework**
 
