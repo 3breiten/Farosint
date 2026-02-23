@@ -1191,23 +1191,60 @@ def export_excel(scan_id):
         ws4.write(row, 4, prod, cell)
 
     # ── Hoja 5: Vulnerabilidades ──────────────────────────────────────────────
+    # Construir índice de raw_results para obtener referencias y remediación
+    raw_vuln_index = {}
+    if raw_results and 'vulnerabilities' in raw_results:
+        for rv in raw_results['vulnerabilities']:
+            key = (rv.get('name', '') or '').strip().lower()
+            if key:
+                raw_vuln_index[key] = rv
+
+    url_fmt = wb.add_format({'border': 1, 'font_color': '#0563C1', 'underline': True, 'valign': 'top'})
+
     ws5 = wb.add_worksheet('Vulnerabilidades')
-    ws5.set_column('A:A', 25)
+    ws5.set_column('A:A', 28)
     ws5.set_column('B:B', 12)
     ws5.set_column('C:C', 8)
-    ws5.set_column('D:D', 60)
-    ws5.set_column('E:E', 35)
-    headers5 = ['CVE / ID', 'Severidad', 'CVSS', 'Descripción', 'Remediación']
+    ws5.set_column('D:D', 30)
+    ws5.set_column('E:E', 55)
+    ws5.set_column('F:F', 45)
+    ws5.set_column('G:G', 22)
+    ws5.set_column('H:H', 22)
+    headers5 = ['CVE / ID', 'Severidad', 'CVSS', 'Host', 'Descripción', 'Remediación', 'MITRE ATT&CK', 'OWASP Top 10']
     for col, h in enumerate(headers5):
         ws5.write(0, col, h, hdr)
     for row, v in enumerate(vulns, start=1):
         severity_lower = (v.get('severity') or 'info').lower()
         fmt = sev.get(severity_lower, cell)
-        ws5.write(row, 0, v.get('cve_id') or v.get('name', ''), fmt)
+
+        # Datos del raw_results (referencias y remediación completas)
+        vname = (v.get('name') or '').strip().lower()
+        raw_v = raw_vuln_index.get(vname, {})
+        references = raw_v.get('references', {})
+        remediation = raw_v.get('remediation', {})
+        rem_steps = remediation.get('steps', []) if isinstance(remediation, dict) else []
+        rem_text = '; '.join(rem_steps) if rem_steps else ''
+
+        mitre_url  = references.get('mitre', '')
+        owasp_url  = references.get('owasp', '')
+
+        ws5.write(row, 0, v.get('cve') or v.get('name', ''), fmt)
         ws5.write(row, 1, (v.get('severity') or '').upper(), fmt)
-        ws5.write(row, 2, v.get('cvss_score') or '', fmt)
-        ws5.write(row, 3, (v.get('description') or '')[:500], cell)
-        ws5.write(row, 4, (v.get('remediation') or '')[:200], cell)
+        ws5.write(row, 2, v.get('cvss') or '', fmt)
+        ws5.write(row, 3, v.get('matched_at') or v.get('target', ''), cell)
+        ws5.write(row, 4, (v.get('description') or '')[:500], cell)
+        ws5.write(row, 5, rem_text[:300], cell)
+        # Links clickeables MITRE y OWASP
+        if mitre_url:
+            tech = extract_mitre_technique(mitre_url) or mitre_url
+            ws5.write_url(row, 6, mitre_url, url_fmt, tech)
+        else:
+            ws5.write(row, 6, '', cell)
+        if owasp_url:
+            cat = extract_owasp_category(owasp_url) or owasp_url
+            ws5.write_url(row, 7, owasp_url, url_fmt, cat)
+        else:
+            ws5.write(row, 7, '', cell)
 
     wb.close()
     output.seek(0)
