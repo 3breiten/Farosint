@@ -4,7 +4,7 @@
 # Genera un ISO instalador basado en Debian 12 con branding FAROSINT
 #
 # Uso: sudo bash build-iso.sh
-# Resultado: FAROSINT-v1.0-installer.iso (~500MB)
+# Resultado: FAROSINT-v1.1-installer.iso (~500MB)
 ###############################################################################
 
 set -e
@@ -12,7 +12,7 @@ set -e
 WORK_DIR="/tmp/farosint-iso-build"
 FAROSINT_DIR="/home/farosint/FAROSINT"
 ISO_ASSETS="${FAROSINT_DIR}/iso-build/farosint-iso"
-OUTPUT_ISO="${FAROSINT_DIR}/iso-build/FAROSINT-v1.0-installer.iso"
+OUTPUT_ISO="${FAROSINT_DIR}/iso-build/FAROSINT-v1.1-installer.iso"
 
 # Debian 12 netinstall (mínima, ~600MB)
 DEBIAN_ISO_URL="https://cdimage.debian.org/cdimage/archive/latest-oldstable/amd64/iso-cd/debian-12.13.0-amd64-netinst.iso"
@@ -39,7 +39,7 @@ done
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${CYAN}║     FAROSINT ISO Builder v1.0            ║${NC}"
+echo -e "${CYAN}║     FAROSINT ISO Builder v1.1            ║${NC}"
 echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -107,7 +107,7 @@ find . -type f ! -name "md5sum.txt" ! -path "./isolinux/*" \
 ok "Checksums actualizados"
 
 # ── 5. Empacar nuevo ISO ───────────────────────────────────────────────────────
-log "Paso 5/5: Generando FAROSINT-v1.0-installer.iso..."
+log "Paso 5/5: Generando FAROSINT-v1.1-installer.iso..."
 
 # Extraer MBR del ISO original para hacerlo booteable
 MBR_FILE="/tmp/farosint-mbr.img"
@@ -138,7 +138,7 @@ xorriso -as mkisofs \
 ok "ISO generado: ${OUTPUT_ISO}"
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════${NC}"
-echo -e "${GREEN}  FAROSINT-v1.0-installer.iso listo!${NC}"
+echo -e "${GREEN}  FAROSINT-v1.1-installer.iso listo!${NC}"
 echo -e "${GREEN}  Tamaño: $(du -sh ${OUTPUT_ISO} | cut -f1)${NC}"
 echo -e "${GREEN}══════════════════════════════════════════${NC}"
 echo ""

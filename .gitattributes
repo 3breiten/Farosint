@@ -1,0 +1,43 @@
+# Force LF line endings for all text files (prevents CRLF on Windows clones)
+# This is critical for shell scripts — CRLF breaks the shebang on Linux/Docker
+
+* text=auto eol=lf
+
+# Shell scripts: always LF
+*.sh text eol=lf
+
+# Python
+*.py text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Web
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+
+# Docs
+*.md text eol=lf
+*.txt text eol=lf
+*.rst text eol=lf
+
+# Config
+*.cfg text eol=lf
+*.ini text eol=lf
+*.conf text eol=lf
+
+# Binarios: sin conversión
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.db binary
+*.deb binary
+*.tar.gz binary
+*.zip binary

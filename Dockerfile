@@ -3,7 +3,7 @@ FROM debian:bookworm
 LABEL maintainer="Mariano Breitenberger"
 LABEL org.opencontainers.image.title="FAROSINT"
 LABEL org.opencontainers.image.description="OSINT & Attack Surface Analysis Framework"
-LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.version="1.1.0"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV GO_VERSION=1.22.5
@@ -99,7 +99,8 @@ RUN mkdir -p \
 USER root
 RUN mkdir -p /data && chown farosint:farosint /data
 COPY --chown=farosint:farosint docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Strip carriage returns en caso de que el archivo fue clonado en Windows (CRLF → LF)
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 # ── Variables de entorno finales ──────────────────────────────────────────────
 ENV GOROOT=/usr/local/go
