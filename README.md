@@ -10,16 +10,6 @@ Built for security professionals, pentesters, and red team operators.
 
 ---
 
-## Downloads — v1.1.0
-
-| Format | Link | Description |
-|--------|------|-------------|
-| 🐳 Docker | See below | Any OS — Linux, macOS, Windows (recommended) |
-| 💿 ISO Installer | [GitHub Releases](https://github.com/3breiten/Farosint/releases/tag/v1.1) | Bootable USB installer (~764 MB) |
-| 🖥️ OVA (VMware / VirtualBox) | [Download from Mega](https://mega.nz/file/ikJFXbib#tMbNQ0ZHrgwQH6_nIFqX_BP6WFnbJSMjL8xcXnUub44) | Import directly into VMware or VirtualBox |
-
----
-
 ## Quick Start — Docker (any OS)
 
 The fastest way to run FAROSINT. Works on Linux, macOS, and Windows (WSL2).
