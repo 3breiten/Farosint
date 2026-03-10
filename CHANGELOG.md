@@ -31,10 +31,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
-## [1.0.0] - 2026-02-22
+## [1.0.0] - 2026-02-19 *(retirada)*
 
-> **Nota:** Esta versión fue lanzada con los bugs de UI listados arriba en v1.1.
-> Se recomienda usar la versión 1.1 cuando esté disponible.
+> Esta versión estuvo disponible públicamente durante 3 días (19–22 de febrero de 2026).
+> Fue retirada al lanzar v1.1.0, que corrigió los bugs de UI reportados por los primeros usuarios.
+> Ya no está disponible para descarga.
 
 ### Primera versión pública
 
