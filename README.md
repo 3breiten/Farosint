@@ -1,6 +1,6 @@
 # FAROSINT
 
-> **Version 1.1.0** — [Releases](https://github.com/3breiten/Farosint/releases) · [Changelog](CHANGELOG.md)
+> **Version 1.1.0** — [Releases](https://github.com/3breiten/Farosint/releases/tag/v1.1) · [Changelog](CHANGELOG.md)
 
 **OSINT & Attack Surface Analysis Framework**
 
@@ -20,7 +20,7 @@ FAROSINT supports three deployment methods:
 | **ISO Installer** | Bare-metal install via bootable USB |
 | **OVA** | VMware or VirtualBox — ready to import |
 
-Full installation instructions are included in each [**Release**](https://github.com/3breiten/Farosint/releases).
+Full installation instructions are included in the [**Release**](https://github.com/3breiten/Farosint/releases/tag/v1.1).
 
 ---
 
