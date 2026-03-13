@@ -1198,6 +1198,15 @@ body.dark-mode .graph-legend {
                 <div class="alert alert-info" id="graphStats">
                     <strong>Cargando grafo...</strong>
                 </div>
+                {% if raw_results and raw_results.cdn_hosts %}
+                <div class="alert alert-warning py-2 mt-2">
+                    <i data-lucide="shield-alert" class="me-1" style="width:16px;height:16px;"></i>
+                    <strong>Port scan skipped</strong> — {{ raw_results.cdn_hosts | length }} host(s) detected behind CDN/WAF and excluded from Nmap:
+                    {% for cdn in raw_results.cdn_hosts %}
+                    <span class="badge bg-secondary ms-1">{{ cdn.host }} ({{ cdn.cdn_name }})</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
         </div>
 
