@@ -233,6 +233,9 @@ body.dark-mode .graph-legend {
                     <a href="/api/scan/{{ scan.scan_id }}/export/excel" class="btn btn-success btn-sm">
                         <i data-lucide="table"></i> Excel
                     </a>
+                    <a href="/export/sarif/{{ scan.scan_id }}" class="btn btn-sm btn-outline-info">
+                        <i data-lucide="file-code"></i> Export SARIF
+                    </a>
                     <button onclick="runShodan('{{ scan.scan_id }}')" class="btn btn-warning btn-sm">
                         <i data-lucide="search"></i> Enriquecer Shodan
                     </button>

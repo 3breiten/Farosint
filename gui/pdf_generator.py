@@ -4,6 +4,7 @@ Genera reportes profesionales en PDF con gráficos y tablas
 """
 
 import io
+import json
 import os
 from datetime import datetime
 from typing import Dict, List, Any, Optional
@@ -138,6 +139,12 @@ class FAROSINTPDFReport:
         self._build_subdomains_section()
         self._build_services_section()
         self._build_vulnerabilities_section()
+        # Sección LAN solo para escaneos internos
+        raw_results = self.scan_data.get('raw_results') or {}
+        scan_type = self.scan_data.get('scan_type', '').lower()
+        is_lan = scan_type in ('lan', 'network', 'cidr', 'ip', 'range') or bool(raw_results.get('hosts'))
+        if is_lan:
+            self._build_lan_section()
         self._build_conclusions()
 
         # Generar PDF
@@ -559,6 +566,150 @@ class FAROSINTPDFReport:
 
         self.story.append(table)
         self.story.append(Spacer(1, 0.3*inch))
+        self.story.append(PageBreak())
+
+    def _build_lan_section(self):
+        """Construir sección de red interna (LAN scan)"""
+        title = Paragraph("Internal Network Findings", self.styles['SectionTitle'])
+        self.story.append(title)
+        self.story.append(Spacer(1, 0.2*inch))
+
+        raw_results = self.scan_data.get('raw_results') or {}
+        hosts = raw_results.get('hosts', [])
+        ports_map = raw_results.get('ports', {})
+
+        if not hosts and not ports_map:
+            self.story.append(Paragraph("<i>No internal host data available.</i>", self.styles['BodyText']))
+            self.story.append(Spacer(1, 0.2*inch))
+            return
+
+        # ── Tabla de hosts descubiertos ──────────────────────────────────────
+        if hosts:
+            hosts_title = Paragraph("<b>Discovered Hosts</b>", self.styles['Heading3'])
+            self.story.append(hosts_title)
+            self.story.append(Spacer(1, 0.1*inch))
+
+            cell_style = ParagraphStyle(
+                name='LanCell',
+                parent=self.styles['BodyText'],
+                fontSize=8,
+                leading=10,
+                wordWrap='CJK'
+            )
+
+            data = [['IP Address', 'Hostname', 'OS / Info']]
+            for host in hosts[:50]:
+                if isinstance(host, dict):
+                    ip = str(host.get('ip', host.get('host', 'N/A')))
+                    hostname = str(host.get('hostname', host.get('ptr', '-')))
+                    os_info = str(host.get('os', host.get('os_info', host.get('info', '-'))))
+                else:
+                    ip = str(host)
+                    hostname = '-'
+                    os_info = '-'
+                data.append([
+                    Paragraph(ip, cell_style),
+                    Paragraph(hostname, cell_style),
+                    Paragraph(os_info, cell_style)
+                ])
+
+            if len(hosts) > 50:
+                data.append([f'... and {len(hosts) - 50} more', '', ''])
+
+            hosts_table = Table(data, colWidths=[1.8*inch, 2.5*inch, 2*inch])
+            hosts_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), self.color_primary),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+                ('TOPPADDING', (0, 0), (-1, -1), 5),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+            ]))
+            self.story.append(hosts_table)
+            self.story.append(Spacer(1, 0.3*inch))
+
+        # ── Tabla de puertos abiertos por host ───────────────────────────────
+        if ports_map:
+            ports_title = Paragraph("<b>Open Ports per Host</b>", self.styles['Heading3'])
+            self.story.append(ports_title)
+            self.story.append(Spacer(1, 0.1*inch))
+
+            port_data = [['IP / Host', 'Port', 'Protocol', 'Service', 'State']]
+            row_count = 0
+            for ip_key, ip_data in ports_map.items():
+                if row_count >= 80:
+                    break
+                # ip_data may be a dict with 'hosts' list (nmap format) or flat dict
+                host_entries = ip_data.get('hosts', [ip_data]) if isinstance(ip_data, dict) else [ip_data]
+                for host_entry in host_entries:
+                    if not isinstance(host_entry, dict):
+                        continue
+                    host_ip = host_entry.get('ip', host_entry.get('host', ip_key))
+                    for port_entry in host_entry.get('ports', []):
+                        if row_count >= 80:
+                            break
+                        if not isinstance(port_entry, dict):
+                            continue
+                        state = port_entry.get('state', 'unknown')
+                        if state != 'open':
+                            continue
+                        port_data.append([
+                            str(host_ip),
+                            str(port_entry.get('port', port_entry.get('portid', '-'))),
+                            str(port_entry.get('protocol', port_entry.get('proto', 'tcp'))),
+                            str(port_entry.get('service', port_entry.get('name', '-'))),
+                            state
+                        ])
+                        row_count += 1
+
+            if len(port_data) > 1:
+                ports_table = Table(port_data, colWidths=[1.6*inch, 0.7*inch, 0.8*inch, 1.5*inch, 0.7*inch])
+                ports_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), self.color_primary),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, -1), 8),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('GRID', (0, 0), (-1, -1), 0.5, colors.gray),
+                    ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey])
+                ]))
+                self.story.append(ports_table)
+                self.story.append(Spacer(1, 0.3*inch))
+            else:
+                self.story.append(Paragraph("<i>No open ports recorded.</i>", self.styles['BodyText']))
+                self.story.append(Spacer(1, 0.2*inch))
+
+        # ── SMB / SNMP findings ──────────────────────────────────────────────
+        smb_results = raw_results.get('smb', raw_results.get('smb_results', {}))
+        snmp_results = raw_results.get('snmp', raw_results.get('snmp_results', {}))
+
+        if smb_results:
+            smb_title = Paragraph("<b>SMB Findings</b>", self.styles['Heading3'])
+            self.story.append(smb_title)
+            self.story.append(Spacer(1, 0.1*inch))
+            smb_text = json.dumps(smb_results, indent=2) if not isinstance(smb_results, str) else smb_results
+            # Truncate for PDF
+            if len(smb_text) > 800:
+                smb_text = smb_text[:797] + '...'
+            self.story.append(Paragraph(f"<font name='Courier' size='8'>{smb_text.replace('<', '&lt;').replace('>', '&gt;')}</font>", self.styles['BodyText']))
+            self.story.append(Spacer(1, 0.2*inch))
+
+        if snmp_results:
+            snmp_title = Paragraph("<b>SNMP Findings</b>", self.styles['Heading3'])
+            self.story.append(snmp_title)
+            self.story.append(Spacer(1, 0.1*inch))
+            snmp_text = json.dumps(snmp_results, indent=2) if not isinstance(snmp_results, str) else snmp_results
+            if len(snmp_text) > 800:
+                snmp_text = snmp_text[:797] + '...'
+            self.story.append(Paragraph(f"<font name='Courier' size='8'>{snmp_text.replace('<', '&lt;').replace('>', '&gt;')}</font>", self.styles['BodyText']))
+            self.story.append(Spacer(1, 0.2*inch))
+
         self.story.append(PageBreak())
 
     def _build_conclusions(self):

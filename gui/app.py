@@ -1328,6 +1328,88 @@ def export_html(scan_id):
         download_name=f'farosint_report_{scan_id}.html'
     )
 
+@app.route('/export/sarif/<scan_id>')
+def export_sarif(scan_id):
+    scan = db.get_scan(scan_id)
+    if not scan:
+        return jsonify({'error': 'Not found'}), 404
+    vulnerabilities = db.get_vulnerabilities(scan_id)
+
+    severity_map = {'critical': 'error', 'high': 'error', 'medium': 'warning', 'low': 'note', 'info': 'none'}
+
+    rules = []
+    results = []
+    seen_rules = set()
+
+    for vuln in vulnerabilities:
+        rule_id = vuln.get('template_id') or vuln.get('name', 'unknown').replace(' ', '-').lower()
+        severity = vuln.get('severity', 'info').lower()
+
+        if rule_id not in seen_rules:
+            seen_rules.add(rule_id)
+            rules.append({
+                'id': rule_id,
+                'name': vuln.get('name', rule_id),
+                'shortDescription': {'text': vuln.get('name', rule_id)},
+                'fullDescription': {'text': vuln.get('description', '') or vuln.get('name', rule_id)},
+                'defaultConfiguration': {'level': severity_map.get(severity, 'note')},
+                'properties': {'tags': ['security'], 'severity': severity}
+            })
+
+        results.append({
+            'ruleId': rule_id,
+            'level': severity_map.get(severity, 'note'),
+            'message': {'text': vuln.get('description', vuln.get('name', '')) or vuln.get('name', '')},
+            'locations': [{'physicalLocation': {'artifactLocation': {'uri': vuln.get('matched_at', vuln.get('target', scan['target']))}}}],
+            'properties': {
+                'cve': vuln.get('cve', ''),
+                'cvss': vuln.get('cvss', ''),
+                'severity': severity
+            }
+        })
+
+    sarif = {
+        'version': '2.1.0',
+        '$schema': 'https://json.schemastore.org/sarif-2.1.0.json',
+        'runs': [{
+            'tool': {
+                'driver': {
+                    'name': 'FAROSINT',
+                    'version': '1.2.0',
+                    'informationUri': 'https://github.com/3breiten/Farosint',
+                    'rules': rules
+                }
+            },
+            'results': results
+        }]
+    }
+
+    return Response(
+        json.dumps(sarif, indent=2),
+        mimetype='application/json',
+        headers={'Content-Disposition': f'attachment; filename=farosint-{scan_id}.sarif'}
+    )
+
+# =============================
+# API: vulnerabilidades por escaneo (para filtrado dinámico de gráfico)
+# =============================
+
+@app.route('/api/scan/<scan_id>/vulnerabilities', methods=['GET'])
+def api_scan_vulnerabilities(scan_id):
+    """Obtener vulnerabilidades de un escaneo específico, agrupadas por severidad"""
+    scan = db.get_scan(scan_id)
+    if not scan:
+        return jsonify({'error': 'Escaneo no encontrado'}), 404
+    vulnerabilities = db.get_vulnerabilities(scan_id)
+    counts = {'critical': 0, 'high': 0, 'medium': 0, 'low': 0, 'info': 0}
+    for v in vulnerabilities:
+        sev = v.get('severity', 'info').lower()
+        if sev in counts:
+            counts[sev] += 1
+        else:
+            counts['info'] += 1
+    return jsonify({'scan_id': scan_id, 'target': scan.get('target'), 'severity_counts': counts, 'total': len(vulnerabilities)})
+
 # =============================
 # Endpoints de Revisión de Findings (Whitelisting / Falsos Positivos)
 # =============================

@@ -370,13 +370,34 @@ function updateVulnChart(scanId) {
         ];
         document.getElementById('vulnChartInfo').innerHTML = '<small>Mostrando todas las vulnerabilidades</small>';
     } else {
-        // Aquí se haría una llamada AJAX para obtener las vulnerabilidades de un escaneo específico
-        // Por ahora, mostrar mensaje
-        console.log('Filtrar por escaneo:', scanId);
-        document.getElementById('vulnChartInfo').innerHTML = '<small>Filtrando por escaneo: ' + scanId + '</small>';
-
-        // TODO: Implementar fetch a /api/scan/<scan_id>/vulnerabilities
-        // y actualizar el gráfico con esos datos
+        // Fetch vulnerability counts for the selected scan
+        document.getElementById('vulnChartInfo').innerHTML = '<small><span class="spinner-border spinner-border-sm" role="status"></span> Cargando...</small>';
+        fetch('/api/scan/' + scanId + '/vulnerabilities')
+            .then(function(resp) { return resp.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    document.getElementById('vulnChartInfo').innerHTML = '<small class="text-danger">Error: ' + data.error + '</small>';
+                    return;
+                }
+                var counts = data.severity_counts || {};
+                vulnChart.data.datasets[0].data = [
+                    counts.critical || 0,
+                    counts.high     || 0,
+                    counts.medium   || 0,
+                    counts.low      || 0,
+                    counts.info     || 0
+                ];
+                vulnChart.update();
+                var target = data.target || scanId;
+                var total  = data.total  || 0;
+                document.getElementById('vulnChartInfo').innerHTML =
+                    '<small>Mostrando <strong>' + total + '</strong> vulnerabilidades para <strong>' + target + '</strong></small>';
+            })
+            .catch(function(err) {
+                console.error('Error fetching vuln data:', err);
+                document.getElementById('vulnChartInfo').innerHTML = '<small class="text-danger">Error al cargar datos</small>';
+            });
+        return; // early return — chart.update() called inside .then()
     }
     vulnChart.update();
 }
