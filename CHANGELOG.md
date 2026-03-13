@@ -6,6 +6,26 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
+## [1.2.0] - 2026-03-13
+
+### Correcciones de bugs
+
+- **Subdominios:** Tab mostraba vacío aunque el grafo encontraba subdominios — lógica `confirmed_zones` corregida, ahora muestra subdominios directos correctamente
+- **Grafo:** Estadísticas mostraban "26 nodos" (lenguaje interno) — reemplazado por badges contextuales: subdominios, IPs, puertos, servicios, vulnerabilidades
+- **Footer:** Mostraba v1.0 en todas las pantallas — corregido a v1.1/v1.2
+- **CDN/WAF:** Servicios = 0 sin explicación cuando el target está detrás de CDN — ahora muestra aviso en tab Servicios y en el grafo con hosts excluidos listados
+- **Vulnerabilidades:** Resultados duplicados en la tab y en DB — agregado índice UNIQUE + INSERT OR IGNORE, limpieza de duplicados existentes
+
+### Nuevas funcionalidades
+
+- **Whitelisting / Falsos positivos (F1):** Marcar cualquier hallazgo como `False Positive`, `Accepted Risk` o `Reviewed` con comentario opcional. Estado visible inline con badge de color. Sin borrado — los hallazgos suprimidos permanecen en DB con estilo diferenciado.
+- **HTTPS nativo (F2):** Certificado TLS auto-firmado generado automáticamente al iniciar. Panel Config → sección TLS: generar CSR para firma por CA externa, importar certificado firmado, ver estado del cert (emisor, vencimiento, tipo).
+- **Export SARIF (F3):** Nuevo endpoint `GET /export/sarif/<scan_id>` — exporta hallazgos en formato SARIF 2.1.0 para integración con GitHub Advanced Security y pipelines CI/CD.
+- **PDF con sección LAN (F4):** El reporte PDF ahora incluye sección "Internal Network Findings" en escaneos LAN con tabla de hosts descubiertos (IP, hostname, OS) y puertos abiertos por host.
+- **Filtrado dinámico de vulnerabilidades (F5):** El gráfico de vulnerabilidades en el dashboard ahora permite filtrar por scan específico mediante selector dinámico.
+
+---
+
 ## [1.1.0] - 2026-02-22
 
 ### Correcciones de bugs (reportados por usuarios en v1.0)

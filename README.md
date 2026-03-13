@@ -1,6 +1,6 @@
 # FAROSINT
 
-> **Version 1.1.0** — [Changelog](CHANGELOG.md)
+> **Version 1.2.0** — [Changelog](CHANGELOG.md)
 
 **OSINT & Attack Surface Analysis Framework**
 
