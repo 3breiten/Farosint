@@ -88,15 +88,16 @@ def scan_new():
 def scan_detail(scan_id):
     """Detalle de un escaneo con MITRE/OWASP"""
     scan = db.get_scan(scan_id)
-    
+
     if not scan:
         return "Escaneo no encontrado", 404
-    
+
     # Obtener resultados
     subdomains = db.get_subdomains(scan_id)
     services = db.get_services(scan_id)
     vulnerabilities = db.get_vulnerabilities(scan_id)
     raw_results = db.get_raw_results(scan_id)
+    reviews = db.get_findings_review(scan_id)
     
     # Enriquecer vulnerabilidades con referencias
     vulnerabilities_enriched = []
@@ -184,7 +185,8 @@ def scan_detail(scan_id):
                          severity_counts=severity_counts,
                          is_lan_scan=is_lan_scan,
                          target_type=target_type,
-                         lan_info=lan_info)
+                         lan_info=lan_info,
+                         reviews=reviews)
 
 @app.route('/results')
 def results():
@@ -1322,6 +1324,27 @@ def export_html(scan_id):
         as_attachment=True,
         download_name=f'farosint_report_{scan_id}.html'
     )
+
+# =============================
+# Endpoints de Revisión de Findings (Whitelisting / Falsos Positivos)
+# =============================
+
+@app.route('/api/vuln/<int:vuln_id>/review', methods=['POST'])
+def api_review_vuln(vuln_id):
+    """Marcar un finding con un estado de revisión"""
+    data = request.get_json()
+    status = data.get('status')  # false_positive / accepted / reviewed
+    comment = data.get('comment', '')
+    if status not in ('false_positive', 'accepted', 'reviewed'):
+        return jsonify({'error': 'Invalid status'}), 400
+    db.set_finding_review(vuln_id, status, comment)
+    return jsonify({'success': True})
+
+@app.route('/api/vuln/<int:vuln_id>/review', methods=['DELETE'])
+def api_delete_review_vuln(vuln_id):
+    """Eliminar la revisión de un finding"""
+    db.delete_finding_review(vuln_id)
+    return jsonify({'success': True})
 
 # =============================
 # FILTROS JINJA2

@@ -152,6 +152,20 @@ class DatabaseManager:
                     print(f"[DB] Migración: eliminados {deleted} servicios duplicados")
                 conn.commit()
                 cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_services_unique ON services(scan_id, ip, port, protocol)')
+
+            # Tabla de revisión de findings (falsos positivos / whitelisting)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS findings_review (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    vuln_id INTEGER NOT NULL,
+                    scan_id TEXT NOT NULL,
+                    status TEXT NOT NULL CHECK(status IN ('false_positive','accepted','reviewed')),
+                    comment TEXT,
+                    reviewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (vuln_id) REFERENCES vulnerabilities(id),
+                    UNIQUE(vuln_id)
+                )
+            ''')
     
     # =============================
     # Métodos para Scans
@@ -379,6 +393,33 @@ class DatabaseManager:
             row = cursor.fetchone()
             return json.loads(row['results']) if row else None
     
+    # =============================
+    # Métodos para Revisión de Findings (Whitelisting / Falsos Positivos)
+    # =============================
+
+    def set_finding_review(self, vuln_id, status, comment=None):
+        """Crear o actualizar la revisión de un finding"""
+        with self.get_connection() as conn:
+            conn.execute("""
+                INSERT INTO findings_review (vuln_id, scan_id, status, comment)
+                VALUES (?, (SELECT scan_id FROM vulnerabilities WHERE id=?), ?, ?)
+                ON CONFLICT(vuln_id) DO UPDATE SET status=excluded.status, comment=excluded.comment, reviewed_at=CURRENT_TIMESTAMP
+            """, (vuln_id, vuln_id, status, comment))
+
+    def get_findings_review(self, scan_id):
+        """Obtener mapa {vuln_id: {status, comment, reviewed_at}} para un escaneo"""
+        with self.get_connection() as conn:
+            rows = conn.execute("""
+                SELECT vuln_id, status, comment, reviewed_at
+                FROM findings_review WHERE scan_id=?
+            """, (scan_id,)).fetchall()
+            return {row['vuln_id']: dict(row) for row in rows}
+
+    def delete_finding_review(self, vuln_id):
+        """Eliminar la revisión de un finding"""
+        with self.get_connection() as conn:
+            conn.execute("DELETE FROM findings_review WHERE vuln_id=?", (vuln_id,))
+
     # =============================
     # Estadísticas
     # =============================

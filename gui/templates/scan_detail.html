@@ -843,10 +843,19 @@ body.dark-mode .graph-legend {
                 {% for vuln in vulnerabilities %}
                 {# TODAS las vulnerabilidades 'info' son detecciones informativas, no vulnerabilidades reales #}
                 {% set is_info_only = (vuln.severity == 'info') %}
-                <tr class="vuln-row" data-severity="{{ vuln.severity }}" data-info-only="{{ 'true' if is_info_only else 'false' }}" style="cursor: pointer;" onclick="toggleVulnDetails({{ loop.index }})">
+                {% set review = reviews.get(vuln.id) %}
+                {% set review_status = review.status if review else '' %}
+                <tr id="vuln-row-{{ vuln.id }}" class="vuln-row {% if review_status == 'false_positive' %}table-secondary{% elif review_status == 'accepted' %}table-warning{% elif review_status == 'reviewed' %}table-success{% endif %}" data-severity="{{ vuln.severity }}" data-info-only="{{ 'true' if is_info_only else 'false' }}" style="cursor: pointer;" onclick="toggleVulnDetails({{ loop.index }})">
                     <td>{{ vuln.severity|severity_badge|safe }}</td>
                     <td>
-                        <strong>{{ vuln.name }}</strong>
+                        <strong {% if review_status == 'false_positive' %}style="text-decoration: line-through;"{% endif %}>{{ vuln.name }}</strong>
+                        {% if review_status %}
+                        <span id="review-badge-{{ vuln.id }}" class="badge ms-1 {% if review_status == 'false_positive' %}bg-secondary{% elif review_status == 'accepted' %}bg-warning text-dark{% elif review_status == 'reviewed' %}bg-success{% endif %}">
+                            {% if review_status == 'false_positive' %}False Positive{% elif review_status == 'accepted' %}Accepted Risk{% elif review_status == 'reviewed' %}Reviewed{% endif %}
+                        </span>
+                        {% else %}
+                        <span id="review-badge-{{ vuln.id }}" style="display:none;" class="badge ms-1"></span>
+                        {% endif %}
                         {% if vuln.cve %}
                         <br><small class="text-danger fw-bold"><i data-lucide="alert-circle" style="width:12px;height:12px;"></i> {{ vuln.cve }}</small>
                         {% endif %}
@@ -868,8 +877,25 @@ body.dark-mode .graph-legend {
                         <span class="text-muted">-</span>
                         {% endif %}
                     </td>
-                    <td class="text-center">
-                        <i data-lucide="chevron-down" class="chevron-icon" style="width:16px;height:16px;"></i>
+                    <td class="text-center" onclick="event.stopPropagation()">
+                        <div class="d-flex align-items-center justify-content-center gap-1">
+                            <i data-lucide="chevron-down" class="chevron-icon" style="width:16px;height:16px;" onclick="toggleVulnDetails({{ loop.index }})"></i>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary py-0 px-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Gestionar revisión">
+                                    <i data-lucide="flag" style="width:14px;height:14px;"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><h6 class="dropdown-header">Revisión de Finding</h6></li>
+                                    <li><a class="dropdown-item" href="#" onclick="reviewVuln({{ vuln.id }}, 'false_positive')"><span class="badge bg-secondary me-1">FP</span> Marcar como Falso Positivo</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="reviewVuln({{ vuln.id }}, 'accepted')"><span class="badge bg-warning text-dark me-1">AR</span> Marcar como Riesgo Aceptado</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="reviewVuln({{ vuln.id }}, 'reviewed')"><span class="badge bg-success me-1">OK</span> Marcar como Revisado</a></li>
+                                    {% if review_status %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="clearReview({{ vuln.id }})"><i data-lucide="x-circle" style="width:14px;height:14px;"></i> Limpiar revisión</a></li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 <tr class="vuln-details" id="vulnDetails{{ loop.index }}" style="display: none;" data-severity="{{ vuln.severity }}" data-info-only="{{ 'true' if is_info_only else 'false' }}">
@@ -1990,5 +2016,112 @@ function searchGraphNode() {
         }
     });
 }
+
+// =============================
+// Whitelisting / Falsos Positivos
+// =============================
+
+let _reviewVulnId = null;
+let _reviewVulnStatus = null;
+
+function reviewVuln(vulnId, status) {
+    _reviewVulnId = vulnId;
+    _reviewVulnStatus = status;
+
+    const labels = {
+        'false_positive': 'Falso Positivo',
+        'accepted': 'Riesgo Aceptado',
+        'reviewed': 'Revisado'
+    };
+    document.getElementById('reviewModalLabel').textContent = 'Marcar como ' + (labels[status] || status);
+    document.getElementById('reviewComment').value = '';
+
+    const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+    modal.show();
+}
+
+function submitReview() {
+    const comment = document.getElementById('reviewComment').value.trim();
+    const vulnId = _reviewVulnId;
+    const status = _reviewVulnStatus;
+
+    fetch(`/api/vuln/${vulnId}/review`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: status, comment: comment})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            applyReviewToRow(vulnId, status);
+            bootstrap.Modal.getInstance(document.getElementById('reviewModal')).hide();
+        } else {
+            alert('Error al guardar la revisión: ' + (data.error || 'desconocido'));
+        }
+    })
+    .catch(e => alert('Error de red: ' + e));
+}
+
+function clearReview(vulnId) {
+    fetch(`/api/vuln/${vulnId}/review`, {method: 'DELETE'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const row = document.getElementById('vuln-row-' + vulnId);
+            if (row) {
+                row.classList.remove('table-secondary', 'table-warning', 'table-success');
+                const strong = row.querySelector('td:nth-child(2) strong');
+                if (strong) strong.style.textDecoration = '';
+            }
+            const badge = document.getElementById('review-badge-' + vulnId);
+            if (badge) { badge.textContent = ''; badge.className = 'badge ms-1'; badge.style.display = 'none'; }
+        }
+    })
+    .catch(e => alert('Error de red: ' + e));
+}
+
+function applyReviewToRow(vulnId, status) {
+    const row = document.getElementById('vuln-row-' + vulnId);
+    if (row) {
+        row.classList.remove('table-secondary', 'table-warning', 'table-success');
+        if (status === 'false_positive') row.classList.add('table-secondary');
+        else if (status === 'accepted') row.classList.add('table-warning');
+        else if (status === 'reviewed') row.classList.add('table-success');
+
+        const strong = row.querySelector('td:nth-child(2) strong');
+        if (strong) strong.style.textDecoration = status === 'false_positive' ? 'line-through' : '';
+    }
+    const badge = document.getElementById('review-badge-' + vulnId);
+    if (badge) {
+        const badgeMap = {
+            'false_positive': {cls: 'badge ms-1 bg-secondary', text: 'False Positive'},
+            'accepted':       {cls: 'badge ms-1 bg-warning text-dark', text: 'Accepted Risk'},
+            'reviewed':       {cls: 'badge ms-1 bg-success', text: 'Reviewed'}
+        };
+        const b = badgeMap[status];
+        if (b) { badge.className = b.cls; badge.textContent = b.text; badge.style.display = ''; }
+    }
+}
 </script>
+
+<!-- Modal de revisión de finding -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Marcar Finding</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label for="reviewComment" class="form-label">Comentario <small class="text-muted">(opcional)</small></label>
+                <textarea id="reviewComment" class="form-control" rows="3" placeholder="Ej: Entorno de desarrollo, no aplica..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="submitReview()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
