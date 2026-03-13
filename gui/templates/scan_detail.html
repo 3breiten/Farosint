@@ -1597,13 +1597,24 @@ async function loadAndRenderGraph() {
         }
 
         // Estadísticas adaptadas al tipo de escaneo
-        let statsHtml = '<strong>Mapa de red:</strong> ';
+        const s = data.stats;
+        const badge = (val, label, cls) =>
+            val > 0 ? `<span class="badge ${cls} me-1">${val} ${label}</span>` : '';
+
+        let statsHtml = '';
         if (data.is_lan) {
-            statsHtml += `${data.stats.ips} host(s) | ${data.stats.ports} puertos | ${data.stats.services} servicios | `;
-            statsHtml += `<span class="text-danger fw-bold">${data.stats.vulnerabilities} vulnerabilidades</span>`;
+            statsHtml += badge(s.ips,             'hosts',        'bg-primary');
+            statsHtml += badge(s.ports,           'puertos',      'bg-secondary');
+            statsHtml += badge(s.services,        'servicios',    'bg-info text-dark');
+            statsHtml += badge(s.vulnerabilities, 'vulnerabilidades', 'bg-danger');
         } else {
-            statsHtml += `${data.stats.total_nodes} nodos | ${data.stats.subdomains} subdominios | ${data.stats.ips} IPs | ${data.stats.ports} puertos | ${data.stats.vulnerabilities} vulns`;
+            statsHtml += badge(s.subdomains,      'subdominios',  'bg-primary');
+            statsHtml += badge(s.ips,             'IPs',          'bg-secondary');
+            statsHtml += badge(s.ports,           'puertos',      'bg-info text-dark');
+            statsHtml += badge(s.services,        'servicios',    'bg-success');
+            statsHtml += badge(s.vulnerabilities, 'vulnerabilidades', 'bg-danger');
         }
+        if (!statsHtml) statsHtml = '<span class="text-muted">Sin hallazgos</span>';
         document.getElementById('graphStats').innerHTML = statsHtml;
 
         // Renderizar grafo
