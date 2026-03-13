@@ -112,6 +112,53 @@
             </div>
         </div>
         
+        <!-- TLS / HTTPS -->
+        <div class="card mt-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0"><i data-lucide="shield"></i> TLS / HTTPS</h5>
+            </div>
+            <div class="card-body">
+                <!-- Cert status -->
+                <div id="tlsStatusBox" class="mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="spinner-border spinner-border-sm text-secondary"></span>
+                        <span class="text-muted">Cargando estado del certificado...</span>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Generate CSR -->
+                <h6 class="mt-3">Generar CSR para firma por CA</h6>
+                <div class="mb-3">
+                    <label for="tlsHostname" class="form-label">Hostname</label>
+                    <input type="text" class="form-control font-monospace" id="tlsHostname"
+                           value="farosint-workstation" placeholder="farosint-workstation">
+                    <div class="form-text">Nombre del host que aparecerá en el certificado (CN).</div>
+                </div>
+                <button type="button" class="btn btn-outline-primary" id="btnGenerateCSR">
+                    <i data-lucide="file-text"></i> Generar y Descargar CSR
+                </button>
+
+                <hr class="mt-4">
+
+                <!-- Import signed cert -->
+                <h6 class="mt-3">Importar certificado firmado por CA</h6>
+                <div class="mb-3">
+                    <input type="file" class="form-control" id="tlsCertFile" accept=".crt,.pem,.cer">
+                    <div class="form-text">Archivo .crt / .pem firmado por tu CA.</div>
+                </div>
+                <button type="button" class="btn btn-outline-success" id="btnImportCert">
+                    <i data-lucide="upload"></i> Importar Certificado
+                </button>
+
+                <div class="alert alert-info mt-4 mb-0">
+                    <i data-lucide="info"></i>
+                    <strong>Nota:</strong> Reiniciá FAROSINT luego de importar un nuevo certificado para que los cambios surtan efecto.
+                </div>
+            </div>
+        </div>
+
         <!-- Configuración del Motor -->
         <div class="card mt-4">
             <div class="card-header bg-dark text-white">
@@ -210,5 +257,99 @@ function showToast(msg, type) {
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3500);
 }
+
+// ── TLS ──────────────────────────────────────────────────
+function loadTLSStatus() {
+    fetch('/api/tls/status')
+        .then(r => r.json())
+        .then(data => {
+            const box = document.getElementById('tlsStatusBox');
+            if (!data.enabled || !data.cert) {
+                box.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-secondary">Sin certificado</span>
+                        <span class="text-muted">No se encontró ningún certificado TLS.</span>
+                    </div>`;
+                return;
+            }
+            const c = data.cert;
+            const typeBadge = c.type === 'CA-signed'
+                ? '<span class="badge bg-success">CA-signed</span>'
+                : '<span class="badge bg-warning text-dark">Self-signed</span>';
+            box.innerHTML = `
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-primary">HTTPS activo</span>
+                    ${typeBadge}
+                </div>
+                <table class="table table-sm table-bordered mb-0" style="font-size:.85rem;">
+                    <tr><th style="width:110px">Subject</th><td class="font-monospace">${c.subject || '-'}</td></tr>
+                    <tr><th>Issuer</th><td class="font-monospace">${c.issuer || '-'}</td></tr>
+                    <tr><th>Expira</th><td class="font-monospace">${c.expires || '-'}</td></tr>
+                </table>`;
+        })
+        .catch(() => {
+            document.getElementById('tlsStatusBox').innerHTML =
+                '<div class="text-danger">Error al cargar estado TLS.</div>';
+        });
+}
+loadTLSStatus();
+
+document.getElementById('btnGenerateCSR').addEventListener('click', function() {
+    const hostname = document.getElementById('tlsHostname').value.trim() || 'farosint-workstation';
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Generando...';
+    fetch('/api/tls/generate-csr', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({hostname})
+    })
+    .then(r => {
+        if (!r.ok) return r.json().then(d => { throw new Error(d.error || 'Error'); });
+        return r.blob();
+    })
+    .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'farosint.csr';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('CSR generado y descargado', 'success');
+    })
+    .catch(e => showToast('Error: ' + e.message, 'danger'))
+    .finally(() => {
+        this.disabled = false;
+        this.innerHTML = '<i data-lucide="file-text"></i> Generar y Descargar CSR';
+        lucide.createIcons();
+    });
+});
+
+document.getElementById('btnImportCert').addEventListener('click', function() {
+    const fileInput = document.getElementById('tlsCertFile');
+    if (!fileInput.files.length) {
+        showToast('Seleccioná un archivo de certificado primero', 'warning');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('cert', fileInput.files[0]);
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Importando...';
+    fetch('/api/tls/import-cert', {method: 'POST', body: formData})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || 'Certificado importado', 'success');
+                loadTLSStatus();
+            } else {
+                showToast('Error: ' + (data.error || ''), 'danger');
+            }
+        })
+        .catch(() => showToast('Error de conexión', 'danger'))
+        .finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i data-lucide="upload"></i> Importar Certificado';
+            lucide.createIcons();
+        });
+});
 </script>
 {% endblock %}

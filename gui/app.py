@@ -4,7 +4,7 @@ FAROSINT Dashboard - VERSIÓN MEJORADA
 Incluye: MITRE/OWASP/CVE, Gráficos, Exportación
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, Response
 from flask_socketio import SocketIO, emit
 from pathlib import Path
 import sys
@@ -24,6 +24,9 @@ from core.orchestrator import FAROSINTOrchestrator
 from utils.health_check import SystemHealthCheck
 from pdf_generator import generate_pdf_report
 from modules.network_utils import detect_target_type
+
+# TLS utilities
+from tls_utils import cert_exists, generate_self_signed, get_cert_info
 
 # Inicializar Flask
 app = Flask(__name__)
@@ -1376,6 +1379,40 @@ def severity_badge(severity):
     return f'<span class="badge bg-{bg} text-{text}">{severity.upper()}</span>'
 
 # =============================
+# TLS / HTTPS API
+# =============================
+
+@app.route('/api/tls/status', methods=['GET'])
+def api_tls_status():
+    from tls_utils import get_cert_info, cert_exists
+    return jsonify({'enabled': cert_exists(), 'cert': get_cert_info()})
+
+@app.route('/api/tls/generate-csr', methods=['POST'])
+def api_tls_generate_csr():
+    from tls_utils import generate_csr
+    data = request.get_json() or {}
+    hostname = data.get('hostname', 'farosint-workstation')
+    csr_bytes = generate_csr(hostname)
+    if csr_bytes:
+        return Response(
+            csr_bytes,
+            mimetype='application/x-pem-file',
+            headers={'Content-Disposition': 'attachment; filename=farosint.csr'}
+        )
+    return jsonify({'error': 'Failed to generate CSR'}), 500
+
+@app.route('/api/tls/import-cert', methods=['POST'])
+def api_tls_import_cert():
+    from tls_utils import import_signed_cert
+    if 'cert' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    cert_file = request.files['cert']
+    success = import_signed_cert(cert_file.read())
+    if success:
+        return jsonify({'success': True, 'message': 'Certificate imported. Restart FAROSINT to apply.'})
+    return jsonify({'error': 'Failed to import certificate'}), 500
+
+# =============================
 # HEALTH CHECK BACKGROUND JOB
 # =============================
 
@@ -1414,10 +1451,19 @@ health_check_thread.start()
 # =============================
 
 if __name__ == '__main__':
+    from tls_utils import cert_exists, generate_self_signed, cert_path, key_path
+    if not cert_exists():
+        print('[TLS] Generating self-signed certificate...')
+        generate_self_signed()
+        print(f'[TLS] Certificate generated at {cert_path()}')
+
+    ssl_context = (str(cert_path()), str(key_path())) if cert_exists() else None
+
     print("="*60)
     print("  FAROSINT Dashboard - MEJORADO")
     print("="*60)
-    print(f"  URL: http://localhost:5000")
+    protocol = 'https' if ssl_context else 'http'
+    print(f"  URL: {protocol}://localhost:5000")
     print("  Características:")
     print("    - MITRE ATT&CK integration")
     print("    - OWASP Top 10 references")
@@ -1425,11 +1471,16 @@ if __name__ == '__main__':
     print("    - CVSS scoring")
     print("    - Remediation steps")
     print("    - Export to Markdown/HTML")
+    if ssl_context:
+        print("    - Native HTTPS (TLS)")
     print("="*60)
     print()
-    
-    socketio.run(app,
-                host='0.0.0.0',
-                port=5000,
-                debug=True,
-                allow_unsafe_werkzeug=True)
+
+    socketio.run(
+        app,
+        host='0.0.0.0',
+        port=5000,
+        debug=False,
+        ssl_context=ssl_context,
+        allow_unsafe_werkzeug=True
+    )
