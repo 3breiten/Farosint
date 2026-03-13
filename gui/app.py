@@ -131,28 +131,34 @@ def scan_detail(scan_id):
         target_domain = scan.get('target', '')
         target_depth = len(target_domain.split('.'))
 
-        # Paso 1: zonas confirmadas por tener hosts más profundos
+        # Paso 1: zonas = subdominios de primer nivel bajo el target
         confirmed_zones = set()
         for sub in subdomains:
             parts = sub['subdomain'].split('.')
-            if len(parts) > target_depth + 1:
+            if len(parts) >= target_depth + 1:
                 confirmed_zones.add('.'.join(parts[-(target_depth + 1):]))
 
         # Paso 2: armar árbol zona → hijos
         subdomain_index = {sub['subdomain']: sub for sub in subdomains}
-        for fl_fqdn in sorted(confirmed_zones):
-            zone_entry = subdomain_index.get(fl_fqdn, {
-                'subdomain': fl_fqdn,
-                'source': 'inferido',
-                'is_alive': False,
-                'http_status': None
-            })
-            children = sorted(
-                [s for s in subdomains if s['subdomain'].endswith('.' + fl_fqdn)],
-                key=lambda x: x['subdomain']
-            )
-            subdomain_tree.append({'zone': zone_entry, 'children': children})
-            first_level_subdomains.append(zone_entry)
+        if confirmed_zones:
+            for fl_fqdn in sorted(confirmed_zones):
+                zone_entry = subdomain_index.get(fl_fqdn, {
+                    'subdomain': fl_fqdn,
+                    'source': 'inferido',
+                    'is_alive': False,
+                    'http_status': None
+                })
+                children = sorted(
+                    [s for s in subdomains if s['subdomain'].endswith('.' + fl_fqdn) and s['subdomain'] != fl_fqdn],
+                    key=lambda x: x['subdomain']
+                )
+                subdomain_tree.append({'zone': zone_entry, 'children': children})
+                first_level_subdomains.append(zone_entry)
+        else:
+            # Fallback: sin jerarquía, mostrar todos planos
+            for sub in sorted(subdomains, key=lambda x: x['subdomain']):
+                subdomain_tree.append({'zone': sub, 'children': []})
+                first_level_subdomains.append(sub)
 
     # Para LAN scans, extraer info adicional del raw_results
     lan_info = {}
@@ -568,23 +574,17 @@ def api_scan_graph(scan_id):
             }
         })
 
-    # Nodos: Vulnerabilidades (CVEs)
-    vuln_count = {}
+    # Nodos: Vulnerabilidades (CVEs) — ya deduplicadas en DB por UNIQUE constraint
+    seen_vuln_ids = set()
     for vuln in vulnerabilities:
         cve = vuln.get('cve') or vuln.get('name', 'Unknown')
         severity = vuln.get('severity', 'info')
         target_url = vuln.get('target', '')
 
-        # Crear ID único para el CVE
         cve_id = f'vuln_{cve.replace(" ", "_")}'
 
-        # Contador de CVEs duplicados
-        if cve not in vuln_count:
-            vuln_count[cve] = 0
-        vuln_count[cve] += 1
-
-        # Agregar nodo de vulnerabilidad (solo una vez por CVE único)
-        if vuln_count[cve] == 1:
+        if cve_id not in seen_vuln_ids:
+            seen_vuln_ids.add(cve_id)
             nodes.append({
                 'data': {
                     'id': cve_id,
@@ -928,9 +928,9 @@ def add_vulnerability_enriched(scan_id, vuln):
 
     description = '\n'.join(description_parts) if description_parts else ''
 
-    # Insertar usando solo las columnas que existen en la tabla
+    # INSERT OR IGNORE evita duplicados (UNIQUE constraint en scan_id, name, matched_at)
     cursor.execute("""
-        INSERT INTO vulnerabilities (
+        INSERT OR IGNORE INTO vulnerabilities (
             scan_id, target, name, severity, template_id, description,
             matched_at, cve, cvss
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)

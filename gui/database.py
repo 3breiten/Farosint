@@ -108,9 +108,15 @@ class DatabaseManager:
                     cve TEXT,
                     cvss REAL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (scan_id) REFERENCES scans(scan_id)
+                    FOREIGN KEY (scan_id) REFERENCES scans(scan_id),
+                    UNIQUE(scan_id, name, matched_at)
                 )
             ''')
+            # Migración: crear índice único en DBs existentes (falla silenciosamente si ya existe)
+            try:
+                cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_vuln_dedup ON vulnerabilities(scan_id, name, matched_at)')
+            except Exception:
+                pass
             
             # Tabla de resultados raw (JSON completo)
             cursor.execute('''

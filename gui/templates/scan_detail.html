@@ -781,8 +781,18 @@ body.dark-mode .graph-legend {
         {% endif %}
 
         {% else %}
-        <div class="alert alert-info">
-            <i data-lucide="info"></i> No se encontraron servicios.
+        <div class="alert alert-secondary">
+            <i data-lucide="info"></i> No se detectaron servicios en este escaneo.
+            {% if raw_results and raw_results.cdn_hosts %}
+            <hr>
+            <strong>Hosts excluidos de Nmap por CDN/WAF:</strong>
+            <ul class="mb-0 mt-1">
+                {% for cdn in raw_results.cdn_hosts %}
+                <li><code>{{ cdn.host }}</code> — {{ cdn.cdn_name }} ({{ cdn.cdn_type }})</li>
+                {% endfor %}
+            </ul>
+            <small class="text-muted">Los hosts detrás de CDN/WAF son excluidos del escaneo de puertos para evitar falsos positivos de la infraestructura del proveedor.</small>
+            {% endif %}
         </div>
         {% endif %}
     </div>
