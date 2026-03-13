@@ -638,11 +638,11 @@ def api_scan_graph(scan_id):
         'stats': {
             'total_nodes': len(nodes),
             'total_edges': len(edges),
-            'subdomains': len([n for n in nodes if n['data']['type'] == 'subdomain']),
+            'subdomains': len(subdomains),
             'ips': len([n for n in nodes if n['data']['type'] == 'ip']),
-            'ports': len([n for n in nodes if n['data']['type'] == 'port']),
+            'ports': len(services),
             'services': len([n for n in nodes if n['data']['type'] == 'service']),
-            'vulnerabilities': len([n for n in nodes if n['data']['type'] == 'vulnerability'])
+            'vulnerabilities': len(vulnerabilities)
         }
     })
 
