@@ -38,7 +38,7 @@ rm -rf "${NUCLEI_TARGET}"
 ln -sf "${NUCLEI_SOURCE}" "${NUCLEI_TARGET}"
 
 echo "FAROSINT Docker iniciando..."
-echo "  Dashboard: http://localhost:5000"
+echo "  Dashboard: https://localhost:5000"
 echo "  Datos persistentes en: ${DATA_DIR}"
 echo ""
 
