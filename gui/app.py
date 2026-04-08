@@ -1533,36 +1533,45 @@ health_check_thread.start()
 # =============================
 
 if __name__ == '__main__':
+    import threading
     from tls_utils import cert_exists, generate_self_signed, cert_path, key_path
+
+    # Generar cert si no existe (para tener HTTPS disponible cuando se quiera)
     if not cert_exists():
         print('[TLS] Generating self-signed certificate...')
         generate_self_signed()
-        print(f'[TLS] Certificate generated at {cert_path()}')
+        print(f'[TLS] Certificate ready at {cert_path()}')
 
     ssl_context = (str(cert_path()), str(key_path())) if cert_exists() else None
 
     print("="*60)
-    print("  FAROSINT Dashboard - MEJORADO")
+    print("  FAROSINT Dashboard v1.2")
     print("="*60)
-    protocol = 'https' if ssl_context else 'http'
-    print(f"  URL: {protocol}://localhost:5000")
-    print("  Características:")
-    print("    - MITRE ATT&CK integration")
-    print("    - OWASP Top 10 references")
-    print("    - CVE Details links")
-    print("    - CVSS scoring")
-    print("    - Remediation steps")
-    print("    - Export to Markdown/HTML")
+    print("  HTTP  → http://localhost:5001  (default)")
     if ssl_context:
-        print("    - Native HTTPS (TLS)")
+        print("  HTTPS → https://localhost:5000  (manual, cert auto-firmado)")
     print("="*60)
     print()
 
+    # HTTPS en puerto 5000 (hilo separado, si hay cert)
+    if ssl_context:
+        def run_https():
+            socketio.run(
+                app,
+                host='0.0.0.0',
+                port=5000,
+                debug=False,
+                ssl_context=ssl_context,
+                allow_unsafe_werkzeug=True
+            )
+        https_thread = threading.Thread(target=run_https, daemon=True)
+        https_thread.start()
+
+    # HTTP en puerto 5001 (principal, el que abre el menú)
     socketio.run(
         app,
         host='0.0.0.0',
-        port=5000,
+        port=5001,
         debug=False,
-        ssl_context=ssl_context,
         allow_unsafe_werkzeug=True
     )

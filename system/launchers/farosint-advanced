@@ -830,7 +830,7 @@ clean_results() {
 show_status() {
     if pgrep -f "python3.*app.py" > /dev/null; then
         PID=$(pgrep -f "python3.*app.py")
-        STATUS="<span foreground='green'><b>✓ Dashboard CORRIENDO</b></span>\n\nPID: $PID\nURL: <a href='https://localhost:5000'>https://localhost:5000</a>"
+        STATUS="<span foreground='green'><b>✓ Dashboard CORRIENDO</b></span>\n\nPID: $PID\nURL: <a href='http://localhost:5001'>http://localhost:5001</a>"
         ICON="emblem-default"
     else
         STATUS="<span foreground='red'><b>✗ Dashboard DETENIDO</b></span>\n\nEl dashboard no está corriendo actualmente."

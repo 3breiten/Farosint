@@ -2,7 +2,7 @@ FAROSINT,^checkout(farosint),/home/farosint/Farosint.png
 
 ^tag(farosint)
 ^sep(FAROSINT)
-🏠 Dashboard,bash -c 'if pgrep -f "python.*app.py" > /dev/null; then firefox https://localhost:5000; else x-terminal-emulator -e "bash -c \"cd /home/farosint/FAROSINT/gui && python3 app.py\"" & sleep 2 && firefox https://localhost:5000; fi',applications-internet
+🏠 Dashboard,bash -c 'if pgrep -f "python.*app.py" > /dev/null; then firefox http://localhost:5001; else x-terminal-emulator -e "bash -c \"cd /home/farosint/FAROSINT/gui && python3 app.py\"" & sleep 2 && firefox http://localhost:5001; fi',applications-internet
 ⚙️ Advanced,/usr/local/bin/farosint-advanced,preferences-system
 💻 CLI,x-terminal-emulator -e /usr/local/bin/farosint-cli,utilities-terminal
 

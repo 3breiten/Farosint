@@ -102,15 +102,15 @@ if lsof -Pi :5000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
         sleep 2
     else
         echo ""
-        echo "Dashboard ya está corriendo en https://localhost:5000"
+        echo "Dashboard ya está corriendo en http://localhost:5001"
         
         # Intentar abrir navegador
         if command -v firefox >/dev/null 2>&1; then
-            firefox https://localhost:5000 >/dev/null 2>&1 &
+            firefox http://localhost:5001 >/dev/null 2>&1 &
         elif command -v chromium >/dev/null 2>&1; then
-            chromium https://localhost:5000 >/dev/null 2>&1 &
+            chromium http://localhost:5001 >/dev/null 2>&1 &
         else
-            xdg-open https://localhost:5000 2>/dev/null &
+            xdg-open http://localhost:5001 2>/dev/null &
         fi
         
         exit 0
@@ -155,20 +155,20 @@ echo -e "${CYAN}🌐 Abriendo navegador...${NC}"
 
 # Intentar varios navegadores en orden
 if command -v firefox >/dev/null 2>&1; then
-    firefox https://localhost:5000 >/dev/null 2>&1 &
+    firefox http://localhost:5001 >/dev/null 2>&1 &
 elif command -v chromium >/dev/null 2>&1; then
-    chromium https://localhost:5000 >/dev/null 2>&1 &
+    chromium http://localhost:5001 >/dev/null 2>&1 &
 elif command -v google-chrome >/dev/null 2>&1; then
-    google-chrome https://localhost:5000 >/dev/null 2>&1 &
+    google-chrome http://localhost:5001 >/dev/null 2>&1 &
 else
-    xdg-open https://localhost:5000 >/dev/null 2>&1 &
+    xdg-open http://localhost:5001 >/dev/null 2>&1 &
 fi
 
 # Información final
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✓ Dashboard corriendo"
-echo "  URL:  https://localhost:5000"
+echo "  URL:  http://localhost:5001"
 echo "  PID:  $DASHBOARD_PID"
 echo "  Logs: /tmp/farosint-dashboard.log"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
