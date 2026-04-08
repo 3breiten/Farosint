@@ -17,7 +17,7 @@ case "$1" in
         if pgrep -f "python3.*app.py" > /dev/null; then
             echo "✓ Dashboard corriendo"
             echo "  PID: $(pgrep -f 'python3.*app.py')"
-            echo "  URL: http://localhost:5000"
+            echo "  URL: https://localhost:5000"
         else
             echo "✗ Dashboard detenido"
         fi
